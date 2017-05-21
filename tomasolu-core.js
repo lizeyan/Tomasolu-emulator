@@ -1,5 +1,4 @@
 //实现Tomasolu算法
-import {_} from "./lib/underscore";
 
 //define all operations and their speed
 const operations = {
@@ -106,7 +105,7 @@ class MemoryBuffer {
             throw "buffer size is not greater than 0";
         this.buffer = [];
         for (let i = 0; i < size; ++i)
-            this.buffer.append({busy: false, address: ""})
+            this.buffer.push({busy: false, address: ""})
     }
     test_and_set (address) {
         let entry = _.findWhere(this.buffer, {busy: false});
