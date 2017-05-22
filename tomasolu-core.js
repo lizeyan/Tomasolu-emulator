@@ -168,6 +168,8 @@ class FPU {
 
         this.load_buffer = new MemoryBuffer(load_buffer_size);
         this.store_buffer = new MemoryBuffer(store_buffer_size);
+
+        this.history_list = [];
     }
 
     // 时钟度过n个周期
@@ -187,6 +189,7 @@ class FPU {
         {
             _.each(this.to_complete[this.cycle_passed], _.bind(function (ins) {
                 ins.work({memory: this.memory, register_file: this.register_file});
+                this.history_list.push();
             }, this));
         }
         // try to issue new instructions
