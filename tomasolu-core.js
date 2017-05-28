@@ -3,23 +3,19 @@
 //define all operations and their exec_time
 const operations = {
     "ld": {
-        description: "load Register(rs) + Immediate(rt) to Register(rd)",
+        description: "load Immediate(rs) to Register(rt)",
         exec_time: 2,
-        write_time: 1,
-        source_address: function (ins, context) {
-            return context.register_file.read(ins.rt) + Number.parseInt(ins.rs);
-        },
-        write_back_address: function (ins, context) {
-            return ins.rd;
-        },
         exec_result: function (ins, context) {
-            return context.memory.read(operations["ld"].source_address(ins, context));
+            return context.memory.read(ins.rs);
         }
+    },
+    "st": {
+        description: "store Register(rs) to Immediate(rt) ",
+        exec_time: 2,
     },
     "addd": {
         description: "floating point rs + rt => rd",
         exec_time: 2,
-        write_time: 1,
         write_back_address: function (ins, context) {
             return ins.rd;
         },
@@ -30,7 +26,6 @@ const operations = {
     "subd": {
         description: "floating point rs - rt => rd",
         exec_time: 2,
-        write_time: 1,
         write_back_address: function (ins, context) {
             return ins.rd;
         },
@@ -41,7 +36,6 @@ const operations = {
     "multd": {
         description: "floating point rs * rt => rd",
         exec_time: 10,
-        write_time: 1,
         write_back_address: function (ins, context) {
             return ins.rd;
         },
@@ -52,7 +46,6 @@ const operations = {
     "divd": {
         description: "floating point rs / rt => rd",
         exec_time: 40,
-        write_time: 1,
         write_back_address: function (ins, context) {
             return ins.rd;
         },
@@ -118,66 +111,56 @@ class Memory {
 }
 
 
-class LoadBuffer {
-    constructor (size, memory) {
-        if (size <= 0)
-            throw "buffer size is not greater than 0";
-        this.buffer = [];
-        this.memory = memory;
-        for (let i = 0; i < size; ++i)
-            this.buffer.push({busy: false, address: "", cache: null})
+class MemoryBuffer {
+    constructor (load_buffer_size, store_buffer_size, fpu) {
+        this.fpu = fpu;
     }
-    test_and_set (address) {
-        let entry = _.findWhere(this.buffer, {busy: false});
-        if (entry !== undefined)
-        {
-            entry.address = address;
-            entry.busy = true;
-            entry.cache = this.memory.read(address);
-            return true;
-        }
-        else
-            return false;
-
+    // issue一条load或者store指令，ins是Instruction类型
+    issue(ins) {
+        //TODO
     }
-    unset (address) {
-        let entry = _.findWhere(this.buffer, {address: address});
-        if (entry !== undefined)
-        {
-            entry.address = "";
-            entry.busy = false;
-            entry.cache = null;
-            return true;
-        }
-        else
-            return false;
+    // load或者buffer队列是否有空闲的位置
+    is_free (ins) {
+        //TODO
+        return true;
     }
-}
-
-
-class StoreBuffer {
-    constructor (buffer_size, memory)
-    {
-        if (buffer_size <= 0)
-            throw "buffer size is not greater than 0";
-        this.buffer = [];
-        this.memory = memory;
-        for (let i = 0; i < buffer_size; ++i)
-            this.buffer.push({busy: false, address: "", cache: null})
-    }
-    empty () {
-        return _.defaults(_.countBy(this.buffer, "busy"), {true: 0, false: 0}).true === 0;
+    /*
+    * 内存缓冲区执行操作:检查寄存器状态,开始执行指令,若干周期之后指令完成的时候负责写回寄存器(并修改寄存器表达式)或者写回到内存
+    * 负责维护指令的状态
+    * current_cycle: 当前的时钟周期数
+    * iter: 这一周期第几次调用到work
+    * return: true or false, 表示这一周期有没有修改寄存器的值和表达式
+     */
+    work (current_cycle, iter) {
+        //TODO
+        return false;
     }
 }
 
 
 class ReservationStation {
-    constructor () {
+    constructor (fpu) {
+        this.fpu = fpu;
         //TODO
     }
-    test_and_set () {
+    //是否还有空闲的位置, ins是Instruction类型
+    is_free (ins) {
         //TODO
         return true;
+    }
+    //发射一条指令
+    issue (ins) {
+        //TODO
+    }
+    /*
+     * 保留站执行操作:检查寄存器状态,开始执行指令,若干周期之后指令完成的时候负责写回寄存器并修改寄存器表达式.
+     * 负责维护指令的状态
+     * current_cycle: 当前的时钟周期数
+     * iter: 这一周期第几次调用到work
+     * return: true or false, 表示这一周期有没有修改寄存器的值和表达式
+     */
+    work (current_cycle, iter) {
+
     }
 }
 
@@ -189,13 +172,30 @@ class RegisterFile {
     }
     read (address) {
         if (! (address in this.data))
-            this.data[address] = 0;
-        return this.data[address];
+            this.data[address] = {expression: "", value: 0};
+        return this.data[address].value;
     }
     write (address, value) {
-        return this.data[address] = value;
+        if (! (address in this.data))
+            this.data[address] = {expression: "", value: 0};
+        return this.data[address].value = value;
     }
-
+    //得到寄存器的表达式，没有表达式则返回""
+    get_expression (address) {
+        if (! (address in this.data))
+            this.data[address] = {expression: "", value: 0};
+        return this.data[address].expression;
+    }
+    //设置寄存器的表达式
+    set_expression (address, expression) {
+        if (! (address in this.data))
+            this.data[address] = {expression: "", value: 0};
+        return this.data[address].expression = expression;
+    }
+    //清除寄存器的表达式
+    clear_expression (address) {
+        this.set_expression(address, "");
+    }
     toString () {
         return JSON.stringify(this.data);
     }
@@ -203,28 +203,21 @@ class RegisterFile {
 
 class FPU {
     constructor(memory=new Memory(), load_buffer_size=3, store_buffer_size=3) {
-        this.instruction_list = [];
-        this.next_to_issue = 0;
-        this.to_write_back = {}; // key: cycle, value: list of {instruction, status} which is to complete exec
-        this.to_finish = {}; // key: cycle, value: list of {instruction, status} which is to complete write back
-
-        this.cycle_passed = 0;
+        this.instruction_list = []; // 指令列表
+        this.instruction_status = {}; // 指令状态: issue, exec, finished
+        this.next_to_issue = 0; //下一条要被issue的指令的index
+        this.cycle_passed = 0; //当前过去了几个时钟周期
 
         this.memory = memory;
         this.register_file = new RegisterFile();
         this.context = {"memory": this.memory, "register_file": this.register_file};
-
-        this.load_buffer = new LoadBuffer(load_buffer_size, this.memory);
-        this.store_buffer = new StoreBuffer(store_buffer_size, this.memory);
-        this.reservation_station = new ReservationStation();
+        this.memory_buffer = new MemoryBuffer(load_buffer_size, store_buffer_size, this);
+        this.reservation_station = new ReservationStation(this);
     }
 
     add_instruction(ins) {
-        this.instruction_list.push({
-            instruction: ins,
-            status: "issue", //issue, exec, write, finished
-        })
-
+        this.instruction_list.push(ins);
+        this.instruction_status[ins] = "issue";
     }
 
     // 时钟度过n个周期
@@ -240,65 +233,40 @@ class FPU {
         this.cycle_passed += 1;
         console.log("current cycle: " + this.cycle_passed);
 
-        // try to issue new instructions. issue -> exec
+        // 发射一条指令
         if (this.next_to_issue < this.num_instruction()) // has unissued instructions
         {
             let to_issue = this.instruction_list[this.next_to_issue];
             let instruction = to_issue.instruction;
             let op = instruction.op;
-            let operation = operations[op];
-            let ok_to_issue = false;
+            let device = null;
 
-            // check if it's ok to issue and do necessary work as well
-            if (op === "ld")
-                ok_to_issue = this.store_buffer.empty() && this.load_buffer.test_and_set(operation.source_address(instruction, this.context));
-            else if (op === "sw")
-                ok_to_issue = false; // TODO
+            if (op === "ld" || op === "st")
+                device = this.memory_buffer;
             else if (op in {"addd": null, "subd": null, "multd": null, "divd": null})
-                ok_to_issue = this.reservation_station.test_and_set(instruction);
+                device = this.reservation_station;
+            else
+                throw "undefined operation " + op;
 
-            // issue
-            if (ok_to_issue)
+            // 内存读写缓冲区或保留站有空闲，可以发射指令
+            if (device.is_free(instruction))
             {
-                let future = this.cycle_passed + operation.exec_time;
-                if (! (future in this.to_write_back))
-                    this.to_write_back[future] = [];
-                this.to_write_back[future].push(to_issue);
-                this.next_to_issue += 1;
-                to_issue.status = "exec";
+                device.issue(instruction);
                 console.log("issued " + instruction);
             }
         }
 
-        // exec -> write
-        if (this.cycle_passed in this.to_write_back)
+
+        //保留站和内存缓冲区工作，直到状态没有再变化
+        let status_changed = true;
+        let iter = 0;
+        while (status_changed)
         {
-            let executed_list = this.to_write_back[this.cycle_passed];
-            _.each(executed_list, _.bind(function (to_write_back) {
-                let future = this.cycle_passed + operations[to_write_back.instruction.op].write_time;
-                if (! (future in this.to_finish))
-                    this.to_finish[future] = [];
-                this.to_finish[future].push(to_write_back);
-                to_write_back.status = "write";
-                console.log("executed " + to_write_back.instruction);
-            }, this));
+            iter += 1;
+            status_changed = this.reservation_station.work(this.cycle_passed, iter);
+            status_changed |= this.memory_buffer.work(this.cycle_passed, iter);
         }
 
-        // write -> finish
-        if (this.cycle_passed in this.to_finish)
-        {
-            let written_list = this.to_finish[this.cycle_passed];
-            _.each(written_list, _.bind(function (to_finish) {
-                // write back
-                let ins = to_finish.instruction;
-                let operation = to_finish.instruction.operation;
-                this.register_file.write(operation.write_back_address(ins, this.context), operation.exec_result(ins, this.context));
-                //check operands and start to exec some issued instructions
-                //TODO
-                to_finish.status = "finished";
-                console.log("finished " + to_finish.instruction);
-            }, this));
-        }
     }
 
     num_unfinished () {
