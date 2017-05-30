@@ -128,12 +128,16 @@ class MemoryBuffer {
     * 内存缓冲区执行操作:检查寄存器状态,开始执行指令,若干周期之后指令完成的时候负责写回寄存器(并修改寄存器表达式)或者写回到内存
     * 负责维护指令的状态
     * current_cycle: 当前的时钟周期数
-    * iter: 这一周期第几次调用到work
-    * return: true or false, 表示这一周期有没有修改寄存器的值和表达式
      */
-    work (current_cycle, iter) {
+    work (current_cycle) {
         //TODO
-        return false;
+    }
+
+    /*
+    * 如果这个周期有要写到寄存器或内存的，先进行写回
+    * current_cycle: 当前的时钟周期数
+    */
+    write_back (current_cycle) {
     }
 }
 
@@ -156,11 +160,15 @@ class ReservationStation {
      * 保留站执行操作:检查寄存器状态,开始执行指令,若干周期之后指令完成的时候负责写回寄存器并修改寄存器表达式.
      * 负责维护指令的状态
      * current_cycle: 当前的时钟周期数
-     * iter: 这一周期第几次调用到work
-     * return: true or false, 表示这一周期有没有修改寄存器的值和表达式
      */
-    work (current_cycle, iter) {
+    work (current_cycle) {
+    }
 
+    /*
+    * 如果这个周期有要写到寄存器或内存的，先进行写回
+    * current_cycle: 当前的时钟周期数
+    */
+    write_back (current_cycle) {
     }
 }
 
@@ -257,17 +265,11 @@ class FPU {
             }
         }
 
-
         //保留站和内存缓冲区工作，直到状态没有再变化
-        let status_changed = true;
-        let iter = 0;
-        while (status_changed)
-        {
-            iter += 1;
-            status_changed = this.reservation_station.work(this.cycle_passed, iter);
-            status_changed |= this.memory_buffer.work(this.cycle_passed, iter);
-        }
-
+        this.reservation_station.write_back(this.cycle_passed)
+        this.memory_buffer.write_back(this.cycle_passed)
+        this.reservation_station.work(this.cycle_passed);
+        this.memory_buffer.work(this.cycle_passed);
     }
 
     num_unfinished () {
