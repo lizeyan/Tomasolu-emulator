@@ -253,6 +253,7 @@ class FPU {
             {
                 device.issue(instruction);
                 console.log("issued " + instruction);
+                this.next_to_issue += 1;
             }
         }
 
