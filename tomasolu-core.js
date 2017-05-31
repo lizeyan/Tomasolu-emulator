@@ -96,11 +96,12 @@ class ReservationContent{
 }
 
 class MemoryBufferContent{
-    constructor(ins, satisfy=false, busy=false, data="", name="", A=""){
+    constructor(ins, satisfy=false, busy=false, name="", A=""){
         this.name = name;
         this.satisfy = satisfy; //load或store的源可取
         this.busy = busy;
-        this.data = data;
+        this.running = false;
+        this.data = 0;
         this.ins = ins;
         this.op = ins.op;
         this.rs = ins.rs;
@@ -131,7 +132,7 @@ class Memory {
         local_address = Math.floor(local_address);
 
         if (! (local_address in this.data))
-            return this.write(local_address, 0);
+            return this.write(local_address, 121);
         else
             return this.data[local_address];
     }
@@ -215,6 +216,7 @@ class MemoryBuffer {
                     this_content.name = ins.op + this_content.rank.toString();
                     this.load_buffer[i] = this_content;
                     this.fpu.register_file.set_expression(ins.rs, this_content.name);
+                    console.log("load buffer issued", this.load_buffer[i]);
                     break;
                 }
             
@@ -254,20 +256,27 @@ class MemoryBuffer {
         // 判断是否开始执行，设置开始执行时间
         for(let i = 0; i < this.load_buffer_size; ++i)
             if(this.load_buffer[i] != null && this.load_buffer[i].busy)
-                if(this.load_buffer[i].satisfy)
+                if(this.load_buffer[i].satisfy && !this.load_buffer[i].running)
+                {
                     this.load_buffer[i].begin_time = current_cycle;
+                    this.load_buffer[i].running = true;
+                }
         for(let i = 0; i < this.store_buffer_size; ++i)
         {
-            if(this.store_buffer[i] != null && this.store_buffer[i].busy)
+            if(this.store_buffer[i] != null && this.store_buffer[i].busy && !this.load_buffer[i].running)
             {
                 if(this.store_buffer[i].satisfy)
+                {
                     this.store_buffer[i].begin_time = current_cycle;
+                    this.store_buffer[i].running = true;
+                }
                 else
                 {
                     if(this.fpu.register_file.get_expression(this.store_buffer[i].rs) == "")
                     {
                         this.store_buffer[i].satisfy = true;
                         this.store_buffer[i].begin_time = current_cycle;
+                        this.store_buffer[i].running = true;
                     }
                 }
             }
@@ -281,6 +290,7 @@ class MemoryBuffer {
                 {
                     // DO EXECUTE
                     this.load_buffer[i].data = this.fpu.memory.read(this.load_buffer[i].A);
+                    console.log("load buffer content", this.load_buffer[i]);
                 }
             }
 
@@ -390,7 +400,7 @@ class ReservationStation {
             type = 2;
         else
             return;
-        console.log("Weixybaba "+ins+" type = "+type);
+        // console.log("Weixybaba "+ins+" type = "+type);
         // 如果保留站已满，那么issue失败
         if (type === 1)
         {
@@ -710,6 +720,7 @@ class FPU {
         this.memory_buffer.write_back(this.cycle_passed)
         this.reservation_station.work(this.cycle_passed);
         this.memory_buffer.work(this.cycle_passed);
+        // console.log("load buffer ", this.memory_buffer.load_buffer);
     }
 
     num_unfinished () {
@@ -736,16 +747,23 @@ $(function () {
             fpu.add_instruction(new Instruction("divd", "F0", "F6", "F10"));
             fpu.add_instruction(new Instruction("addd", "F8", "F2", "F6"));
             let terminated = false;
-            for (let i = 0; i < 100; ++i) {
+            for (let i = 0; i < 70; ++i) {
                 fpu.single_cycle_pass();
+
                 if (fpu.num_unfinished() === 0) {
                     terminated = true;
                     break;
                 }
             }
             if (!terminated)
+            {
+                console.log("\n\n你们真是逆天狂神！！！\n\n\n");
+                console.log("next to issue:", fpu.next_to_issue);
+                console.log("next inst to issue:", fpu.instruction_list[fpu.next_to_issue]);
+                console.log("load buffer ", fpu.memory_buffer.load_buffer);
                 throw "unterminated sequence";
-            console.log(fpu.register_file);
+            }
+            
         },
         function () {
 
