@@ -95,6 +95,21 @@ class ReservationContent{
     }
 }
 
+class MemoryBufferContent{
+    constructor(ins, satisfy=false, busy=false, data="", name="", A=""){
+        this.name = name;
+        this.satisfy = satisfy; //load或store的源可取
+        this.busy = busy;
+        this.data = data;
+        this.ins = ins;
+        this.op = ins.op;
+        this.rs = ins.rs;
+        this.A = ins.rd;
+        this.begin_time = 0; //这条指令开始计算的时间
+        this.rank = 0; //在保留站的第几位
+    }
+}
+
 
 //Memory use integer address, integer value
 class Memory {
@@ -135,24 +150,150 @@ class Memory {
 
 
 class MemoryBuffer {
-    constructor (load_buffer_size, store_buffer_size, fpu) {
+    constructor (load_buffer_size = 3, store_buffer_size = 3, fpu) {
         this.fpu = fpu;
-    }
-    // issue一条load或者store指令，ins是Instruction类型
-    issue(ins) {
-        //TODO
+		this.load_buffer_size = load_buffer_size;
+		this.store_buffer_size = store_buffer_size;
+		this.load_buffer_used = 0;
+		this.store_buffer_used = 0;
+		this.load_buffer = new Array(load_buffer_size);
+        this.store_buffer = new Array(store_buffer_size);
+        for(let i = 0; i < load_buffer_size; ++i)
+            this.load_buffer[i] = null;
+        for(let i = 0; i <store_buffer_size; ++i)
+            this.store_buffer[i] = null;
+		
     }
     // load或者buffer队列是否有空闲的位置
     is_free (ins) {
-        //TODO
+        if(ins.op === "ld")
+		{
+            if(this.load_buffer_used < this.load_buffer_size)
+                return true;
+            else
+                return false;
+        }
+		else if(ins.op === "st")
+		{
+            if(this.store_buffer_used < this.store_buffer_size)
+                return true;
+            else
+                return false;
+        }
+    }
+    // issue一条load或者store指令，ins是Instruction类型
+    issue(ins) {
+        if (ins.op == "ld")
+        {
+            if(this.load_buffer_used >= this.load_buffer_size) 
+                throw "can't issue " + ins.op;
+            else
+                this.load_buffer_used += 1;
+        }
+        else
+        {
+            if(this.store_buffer_used >= this.store_buffer_size) 
+                throw "can't issue " + ins.op;
+            else
+                this.store_buffer_used += 1;
+        }
+
+        var this_content = new MemoryBufferContent(ins);
+        if (ins.op == "ld") // Load
+        {
+            this_content.satisfy = true;
+            this_content.busy = true;
+            let rank = 0;
+
+            for(let i = 0; i < this.load_buffer_size; ++i)
+                if(this.load_buffer[i] == null)
+                {
+                    
+                    rank = i;
+                    this_content.rank = rank;
+                    // 设置写入寄存器的表达式
+                    this_content.name = ins.op + this_content.rank.toString();
+                    this.load_buffer[i] = this_content;
+                    this.fpu.register_file.set_expression(ins.rs, this_content.name);
+                    break;
+                }
+            
+        }
+        else // Store
+        {
+            this_content.busy = true;
+            if(this.fpu.register_file.get_expression(ins.rs) == "") // 寄存器中有可供store的值
+            {
+                this_content.data = this.fpu.register_file.read(ins.rs);
+                this_content.satisfy = true;   
+            }
+            else
+            {
+                this_content.satisfy = false; 
+            }
+            let rank = 0;
+            for(let i = 0; i < this.store_buffer_size; ++i)
+                if(this.store_buffer[i] == null)
+                {   
+                    rank = i;
+                    this_content.rank = rank;
+                    // 设置写入寄存器的表达式
+                    this_content.name = ins.op + this_content.rank.toString();
+                    this.store_buffer[i] = this_content;
+                    break;
+                }
+        }
     }
     /*
-    * 内存缓冲区执行操作:检查寄存器状态,开始执行指令,若干周期之后指令完成的时候负责写回寄存器(并修改寄存器表达式)或者写回到内存
-    * 负责维护指令的状态
+    * 内存缓冲区执行操作:检查寄存器状态,开始执行指令,若干周期之后指令完成的时候负责写回寄存器(并修改寄存器表达式)
+    * 或者写回到内存负责维护指令的状态
     * current_cycle: 当前的时钟周期数
      */
     work (current_cycle) {
-        //TODO
+
+        // 判断是否开始执行，设置开始执行时间
+        for(let i = 0; i < this.load_buffer_size; ++i)
+            if(this.load_buffer[i] != null && this.load_buffer[i].busy)
+                if(this.load_buffer[i].satisfy)
+                    this.load_buffer[i].begin_time = current_cycle;
+        for(let i = 0; i < this.store_buffer_size; ++i)
+        {
+            if(this.store_buffer[i] != null && this.store_buffer[i].busy)
+            {
+                if(this.store_buffer[i].satisfy)
+                    this.store_buffer[i].begin_time = current_cycle;
+                else
+                {
+                    if(this.fpu.register_file.get_expression(this.store_buffer[i].rs) == "")
+                    {
+                        this.store_buffer[i].satisfy = true;
+                        this.store_buffer[i].begin_time = current_cycle;
+                    }
+                }
+            }
+        }
+
+
+        for(let i = 0; i < this.load_buffer_size; ++i)
+            if(this.load_buffer[i] != null && this.load_buffer[i].busy && this.load_buffer[i].satisfy)
+            {
+                if(current_cycle - this.load_buffer[i].begin_time === operations[this.load_buffer[i].op].exec_time)
+                {
+                    // DO EXECUTE
+                    this.load_buffer[i].data = this.fpu.memory.read(this.load_buffer[i].A);
+                }
+            }
+
+         for(let i = 0; i < this.store_buffer_size; ++i)
+            if(this.store_buffer[i] != null && this.store_buffer[i].busy && this.store_buffer[i].satisfy)
+            {
+                if(current_cycle - this.store_buffer[i].begin_time === operations[this.store_buffer[i].op].exec_time)
+                {
+                    // DO EXECUTE
+                    this.store_buffer[i].data = this.fpu.register_file.read(this.store_buffer[i].rs);
+                }
+            }
+        
     }
 
     /*
@@ -160,6 +301,44 @@ class MemoryBuffer {
     * current_cycle: 当前的时钟周期数
     */
     write_back (current_cycle) {
+        for(let i = 0; i < this.load_buffer_size; ++i)
+            if(this.load_buffer[i] != null && this.load_buffer[i].busy)
+            {
+                if(current_cycle - this.load_buffer[i].begin_time === operations[this.load_buffer[i].op].exec_time + 1)
+                {
+                    // DO WRITEBACK
+                    if(this.fpu.register_file.get_expression(this.load_buffer[i].rs) == this.load_buffer[i].name)
+                    {
+                        this.fpu.register_file.write(this.load_buffer[i].rs, this.load_buffer[i].data);
+                        //已写回的表达式为空
+                        this.fpu.register_file.set_expression(this.load_buffer[i].rs, "");
+                    }
+                
+                    this.load_buffer_used -= 1;
+                    //写入这条指令的写回时间
+                    this.fpu.instruction_status_change_time[this.load_buffer[i].ins]["write_time"] = current_cycle;
+                    this.fpu.instruction_status_change_time[this.load_buffer[i].ins]["finish_time"] = current_cycle - 1;
+                    this.load_buffer[i] = null;
+                }
+            }
+
+        for(let i = 0; i < this.store_buffer_size; ++i)
+            if(this.store_buffer[i] != null && this.store_buffer[i].busy)
+            {
+                if(current_cycle - this.store_buffer[i].begin_time === operations[this.lstore_buffer[i].op].exec_time + 1)
+                {
+                    // DO WRITE MEMORY
+                    this.fpu.memory.write(this.store_buffer[i].A, this.store_buffer[i].data);
+                    
+                    this.store_buffer_used -= 1;
+                    //写入这条指令的写回时间
+                    this.fpu.instruction_status_change_time[this.store_buffer[i].ins]["write_time"] = current_cycle;
+                    this.fpu.instruction_status_change_time[this.store_buffer[i].ins]["finish_time"] = current_cycle - 1;
+                    this.store_buffer[i] = null;
+                }
+            }
+
+
     }
 }
 
@@ -185,14 +364,18 @@ class ReservationStation {
             this.multi_compute_work[i] = -1;
     }
     //是否还有空闲的位置, ins是Instruction类型
-    is_free (ins) {
-        if(ins.op == "addd" || ins.op == "subd"){
-            if(add_used < add_size)
+    is_free (ins) 
+    {
+        if(ins.op == "addd" || ins.op == "subd")
+        {
+            if(this.add_used < this.add_size)
                 return true;
             else
                 return false;
-        }else if(ins.op == "multd" || ins.op == "divd"){
-            if(multi_used < multi_size)
+        }
+        else if(ins.op == "multd" || ins.op == "divd")
+        {
+            if(this.multi_used < this.multi_size)
                 return true;
             else
                 return false;
@@ -207,22 +390,28 @@ class ReservationStation {
             type = 2;
         else
             return;
-
+        console.log("Weixybaba "+ins+" type = "+type);
         // 如果保留站已满，那么issue失败
-        if (type == 1)
-            if(add_used >= add_size) throw "can't issue " + op;
+        if (type === 1)
+        {
+            if(this.add_used >= this.add_size) 
+                throw "can't issue 3 " + ins.op;
+        }
         else
-            if(multi_used >= multi_size) throw "can't issue " + op;
+        {
+            if(this.multi_used >= this.multi_size) 
+                throw "can't issue 4 " + ins.op;
+        }
         // 更新保留站使用大小
-        if (type == 1) 
+        if (type === 1) 
             this.add_used += 1; 
         else
             this.multi_used += 1;
         // 为这个待issue的类构建一个新的保留站项目
-        this_content = new ReservationContent(ins.op, ins.rs, ins)
+        var this_content = new ReservationContent(ins.op, ins.rs, ins);
         // 检测rt寄存器是否可用
         if(this.fpu.register_file.get_expression(ins.rt) == ""){
-            this_content.vi = this.fpu.register_file.read(ins.rt)
+            this_content.vi = this.fpu.register_file.read(ins.rt);
         }else{
             this_content.qi = this.fpu.register_file.get_expression(ins.rt);
         }
@@ -239,17 +428,20 @@ class ReservationStation {
             this_content.satisfy = false;
         // 将这个保留站项目加入列表中
         let rank = 0;
-        if (type == 1){
+        if (type == 1)
+        {
             for(let i = 0; i < this.add_size; ++i)
-                if(add_reservation_stations[i] == null){
-                    add_reservation_stations[i] = this_content;
+                if(this.add_reservation_stations[i] === null){
+                    this.add_reservation_stations[i] = this_content;
                     rank = i;
                     break;
                 }
-        }else{
+        }
+        else
+        {
             for(let i = 0; i < this.multi_size; ++i)
-                if(multi_reservation_stations[i] == null){
-                    multi_reservation_stations[i] = this_content;
+                if(this.multi_reservation_stations[i] === null){
+                    this.multi_reservation_stations[i] = this_content;
                     rank = i;
                     break;
                 }
@@ -291,11 +483,11 @@ class ReservationStation {
             if(this.add_reservation_stations[i] == null || this.add_reservation_stations[i].satisfy) continue;
             //更新vi和vj
             if(this.add_reservation_stations[i].vi == "")
-                if(this.fpu.get_expression(this.add_reservation_stations[i].ins.rt) == "")
-                    this.add_reservation_stations[i].vi = this.fpu.read(this.add_reservation_stations[i].ins.rt)
+                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rt) == "")
+                    this.add_reservation_stations[i].vi = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rt)
             if(this.add_reservation_stations[i].vj == "")
-                if(this.fpu.get_expression(this.add_reservation_stations[i].ins.rd) == "")
-                    this.add_reservation_stations[i].vj = this.fpu.read(this.add_reservation_stations[i].ins.rd)
+                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rd) == "")
+                    this.add_reservation_stations[i].vj = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rd)
             //更新所有满足条件的保留站项目
             if(this.add_reservation_stations[i].vi != "" && this.add_reservation_stations[i].vj != "")
                 this.add_reservation_stations[i].satisfy = true;
@@ -305,11 +497,11 @@ class ReservationStation {
             if(this.multi_reservation_stations[i] == null || this.multi_reservation_stations[i].satisfy) continue;
             //更新vi和vj
             if(this.multi_reservation_stations[i].vi == "")
-                if(this.fpu.get_expression(this.multi_reservation_stations[i].ins.rt) == "")
-                    this.multi_reservation_stations[i].vi = this.fpu.read(this.multi_reservation_stations[i].ins.rt)
+                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rt) == "")
+                    this.multi_reservation_stations[i].vi = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rt)
             if(this.multi_reservation_stations[i].vj == "")
-                if(this.fpu.get_expression(this.multi_reservation_stations[i].ins.rd) == "")
-                    this.multi_reservation_stations[i].vj = this.fpu.read(this.multi_reservation_stations[i].ins.rd)
+                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rd) == "")
+                    this.multi_reservation_stations[i].vj = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rd)
             //更新所有满足条件的保留站项目
             if(this.multi_reservation_stations[i].vi != "" && this.multi_reservation_stations[i].vj != "")
                 this.multi_reservation_stations[i].satisfy = true;
@@ -366,7 +558,7 @@ class ReservationStation {
     }
 
     /*
-    * 如果这个周期有要写到寄存器或内存的，先进行写回
+    * 如果这个周期有要写到寄存器或内存的，先进行写回 
     * current_cycle: 当前的时钟周期数
     */
     write_back (current_cycle) {
@@ -505,6 +697,7 @@ class FPU {
             // 内存读写缓冲区或保留站有空闲，可以发射指令
             if (device.is_free(to_issue))
             {
+                this.instruction_status_change_time[to_issue] = {};
                 this.instruction_status_change_time[to_issue]["issue_time"] = this.cycle_passed;
                 device.issue(to_issue);
                 console.log("issued " + to_issue);
@@ -536,8 +729,8 @@ $(function () {
     let test_function_list = [
         function () {
             let fpu = new FPU();
-            fpu.add_instruction(new Instruction("ld", "+34", "R2", "F6"));
-            fpu.add_instruction(new Instruction("ld", "+45", "R3", "F2"));
+            fpu.add_instruction(new Instruction("ld", "F6", "+34", ""));
+            fpu.add_instruction(new Instruction("ld", "F2", "+45", ""));
             fpu.add_instruction(new Instruction("multd", "F2", "F4", "F0"));
             fpu.add_instruction(new Instruction("subd", "F6", "F2", "F8"));
             fpu.add_instruction(new Instruction("divd", "F0", "F6", "F10"));
