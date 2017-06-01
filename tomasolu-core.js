@@ -68,6 +68,7 @@ class Instruction {
         this.rs = rs;
         this.rt = rt;
         this.rd = rd;
+        this.status = ""; //指令状态: queue, issue, exec, exec_finished, finished
         this.operation = operations[op];
     }
 
@@ -474,6 +475,7 @@ class ReservationStation {
                     if(this.add_compute_work[i] === -1){
                         this.add_compute_work[i] = this_content.rank;
                         this_content.busy = true;
+                        ins.status = "exec";
                         this_content.ans = operations[this_content.op].exec_result(this_content.vj, this_content.vk);
                         break;
                     }
@@ -482,6 +484,7 @@ class ReservationStation {
                     if(this.multi_compute_work[i] === -1){
                         this.multi_compute_work[i] = this_content.rank;
                         this_content.busy = true;
+                        ins.status = "exec";
                         this_content.ans = operations[this_content.op].exec_result(this_content.vj, this_content.vk);
                         break;
                     }
@@ -543,6 +546,7 @@ class ReservationStation {
                 //为min_rank的保留站项分配计算资源
                 this.add_compute_work[i] = this.add_reservation_stations[min_rank].rank;
                 this.add_reservation_stations[min_rank].busy = true;
+                this.add_reservation_stations[min_rank].ins.status = "exec";
                 this.add_reservation_stations[min_rank].ans = operations[this.add_reservation_stations[min_rank].op].exec_result(this.add_reservation_stations[min_rank].vj, this.add_reservation_stations[min_rank].vk);
             }
         }
@@ -564,6 +568,7 @@ class ReservationStation {
                 //为min_rank的保留站项分配计算资源
                 this.multi_compute_work[i] = this.multi_reservation_stations[min_rank].rank;
                 this.multi_reservation_stations[min_rank].busy = true;
+                this.add_reservation_stations[min_rank].ins.status = "exec";
                 this.multi_reservation_stations[min_rank].ans = operations[this.multi_reservation_stations[min_rank].op].exec_result(this.multi_reservation_stations[min_rank].vj, this.multi_reservation_stations[min_rank].vk);
             }
         }
@@ -575,6 +580,46 @@ class ReservationStation {
         for(let i = 0; i < this.multi_size; ++i)
             if(this.multi_reservation_stations[i] !== null && this.multi_reservation_stations[i].busy)
                 this.multi_reservation_stations[i].compute_time += 1;
+
+        //处理已经结束的
+        for(let i = 0; i < this.add_size; ++i)
+        {
+            if(this.add_reservation_stations[i] === null) 
+                continue;
+            // 如果该指令已经计算完毕，那么释放相应资源
+            if(this.add_reservation_stations[i].compute_time === operations[this.add_reservation_stations[i].op].exec_time)
+            {
+                //释放这个保留站的位置
+                this.add_used -= 1;
+                //释放计算资源
+                console.log("before release compute",this.add_reservation_stations[i]);
+                for(let j = 0; j < add_compute_num; ++j)
+                    if(this.add_compute_work[j] === this.add_reservation_stations[i].rank)
+                        this.add_compute_work[j] = -1;
+                //写入这条指令的结束时间
+                this.fpu.instruction_status_change_time[this.add_reservation_stations[i].ins]["finish_time"] = current_cycle;
+                this.add_reservation_stations[i].ins.status = "exec_finished";
+            }
+        }
+
+        for(let i = 0; i < this.multi_size; ++i)
+        {
+            if(this.multi_reservation_stations[i] === null) 
+                continue;
+            // 如果该指令已经计算完毕，那么释放相应的资源
+            if(this.multi_reservation_stations[i].compute_time === operations[this.multi_reservation_stations[i].op].exec_time)
+            {
+                //释放这个保留站的位置
+                this.multi_used -= 1;
+                //释放计算资源
+                for(let j = 0; j < multi_compute_num; ++j)
+                    if(this.multi_compute_work[j] === this.multi_reservation_stations[i].rank)
+                        this.multi_compute_work[j] = -1;
+                //写入这条指令的结束时间
+                this.fpu.instruction_status_change_time[this.multi_reservation_stations[i].ins]["finish_time"] = current_cycle;
+                this.multi_reservation_stations[i].ins.status = "exec_finished";
+            }
+        }
     }
 
     /*
@@ -597,16 +642,9 @@ class ReservationStation {
                     this.fpu.register_file.set_expression(this.add_reservation_stations[i].rs, "");
                     console.log("add writeback rs : ", this.add_reservation_stations[i].rs)
                 }
-                //释放这个保留站的位置
-                this.add_used -= 1;
-                //释放计算资源
-                console.log("before release compute",this.add_reservation_stations[i]);
-                for(let j = 0; j < add_compute_num; ++j)
-                    if(this.add_compute_work[j] === this.add_reservation_stations[i].rank)
-                        this.add_compute_work[j] = -1;
                 //写入这条指令的写回时间
                 this.fpu.instruction_status_change_time[this.add_reservation_stations[i].ins]["write_time"] = current_cycle;
-                this.fpu.instruction_status_change_time[this.add_reservation_stations[i].ins]["finish_time"] = current_cycle - 1;
+                this.add_reservation_stations[i].ins.status = "finished";
                 this.add_reservation_stations[i] = null;
             }
         }
@@ -625,15 +663,9 @@ class ReservationStation {
                     //已写回的表达式为空
                     this.fpu.register_file.set_expression(this.multi_reservation_stations[i].rs, "");
                 }
-                //释放这个保留站的位置
-                this.multi_used -= 1;
-                //释放计算资源
-                for(let j = 0; j < multi_compute_num; ++j)
-                    if(this.multi_compute_work[j] === this.multi_reservation_stations[i].rank)
-                        this.multi_compute_work[j] = -1;
                 //写入这条指令的写回时间
                 this.fpu.instruction_status_change_time[this.multi_reservation_stations[i].ins]["write_time"] = current_cycle;
-                this.fpu.instruction_status_change_time[this.multi_reservation_stations[i].ins]["finish_time"] = current_cycle - 1;
+                this.multi_reservation_stations[i].ins.status = "finished";
                 this.multi_reservation_stations[i] = null;
             }
         }
@@ -680,7 +712,6 @@ class RegisterFile {
 class FPU {
     constructor(memory=new Memory(), load_buffer_size=3, store_buffer_size=3) {
         this.instruction_list = []; // 指令列表
-        this.instruction_status = {}; // 指令状态: issue, exec, finished
         this.instruction_status_change_time = {}; // 指令的运行状态的三个时间，发射指令时间(issue_time)，执行完毕时间(finish_time)，写回结果时间(write_time)
         this.next_to_issue = 0; //下一条要被issue的指令的index
         this.cycle_passed = 0; //当前过去了几个时钟周期
@@ -694,7 +725,7 @@ class FPU {
 
     add_instruction(ins) {
         this.instruction_list.push(ins);
-        this.instruction_status[ins] = "issue";
+        ins.status = "queue";
     }
 
     // 时钟度过n个周期
@@ -730,6 +761,7 @@ class FPU {
                 this.instruction_status_change_time[to_issue] = {};
                 this.instruction_status_change_time[to_issue]["issue_time"] = this.cycle_passed;
                 device.issue(to_issue);
+                to_issue.status = "issue";
                 console.log("issued " + to_issue);
                 this.next_to_issue += 1;
             }
@@ -782,6 +814,7 @@ $(function () {
                 console.log("next inst to issue:", fpu.instruction_list[fpu.next_to_issue]);
                 console.log("memory buffer ", fpu.memory_buffer.toString());
                 console.log("registers\n", fpu.register_file.toString());
+                console.log(fpu.instruction_list[0].status)
                 throw "unterminated sequence";
             }
             
