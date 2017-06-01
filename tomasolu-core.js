@@ -106,7 +106,7 @@ class MemoryBufferContent{
         this.ins = ins;
         this.op = ins.op;
         this.rs = ins.rs;
-        this.A = ins.rd;
+        this.A = ins.rt;
         this.issue_time = 0;
         this.begin_time = 0; //这条指令开始计算的时间
         this.rank = 0; //在保留站的第几位
@@ -124,14 +124,16 @@ class Memory {
         let local_address = address;
         let local_offset = offset;
 
-        if (typeof address === String)
-            local_address = Number.parseInt(address);
-        if (typeof offset === String) {
-            local_offset = Number.parseInt("" + offset);
-        }
+       
+        local_address = Number.parseInt(address);
+        local_offset = Number.parseInt("" + offset);
+
 
         local_address += local_offset;
         local_address = Math.floor(local_address);
+
+        // console.log("address String", address);
+        // console.log("address Num", local_address);
 
         if (! (local_address in this.data))
             return this.write(local_address, 121);
@@ -354,7 +356,7 @@ class MemoryBuffer {
                 {
                     // DO EXECUTE
                     this.load_buffer[i].data = this.fpu.memory.read(this.load_buffer[i].A);
-                    console.log("load buffer content", this.load_buffer[i]);
+                    console.log("load buffer execute", this.load_buffer[i]);
                 }
             }
 
@@ -856,7 +858,8 @@ $(function () {
             let fpu = new FPU();
             fpu.add_instruction(new Instruction("ld", "F6", "+34", ""));
             fpu.add_instruction(new Instruction("ld", "F2", "+45", ""));
-            fpu.add_instruction(new Instruction("divd", "F0", "F6", "F2"));
+            fpu.add_instruction(new Instruction("ld", "F10", "+5", ""));
+            fpu.add_instruction(new Instruction("addd", "F0", "F6", "F2"));
             fpu.add_instruction(new Instruction("st", "F0", "+1", ""));
             fpu.add_instruction(new Instruction("st", "F10", "+1", ""));
             // fpu.add_instruction(new Instruction("multd", "F0", "F2", "F6"));
