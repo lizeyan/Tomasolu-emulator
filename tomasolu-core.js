@@ -762,10 +762,10 @@ $(function () {
             let fpu = new FPU();
             fpu.add_instruction(new Instruction("ld", "F6", "+34", ""));
             fpu.add_instruction(new Instruction("ld", "F2", "+45", ""));
-            fpu.add_instruction(new Instruction("multd", "F0", "F2", "F4"));
+            fpu.add_instruction(new Instruction("multd", "F0", "F2", "F6"));
             fpu.add_instruction(new Instruction("subd", "F8", "F6", "F2"));
             fpu.add_instruction(new Instruction("divd", "F10", "F0", "F6"));
-            fpu.add_instruction(new Instruction("addd", "F6", "F8", "F2"));
+            fpu.add_instruction(new Instruction("addd", "F6", "F10", "F2"));
             let terminated = false;
             for (let i = 0; i < 70; ++i) {
                 fpu.single_cycle_pass();
