@@ -107,6 +107,7 @@ class MemoryBufferContent{
         this.op = ins.op;
         this.rs = ins.rs;
         this.A = ins.rd;
+        this.issue_time = 0;
         this.begin_time = 0; //这条指令开始计算的时间
         this.rank = 0; //在保留站的第几位
     }
@@ -185,7 +186,7 @@ class MemoryBuffer {
         }
     }
     // issue一条load或者store指令，ins是Instruction类型
-    issue(ins) {
+    issue(ins, current_cycle) {
         if (ins.op === "ld")
         {
             if(this.load_buffer_used >= this.load_buffer_size) 
@@ -202,6 +203,7 @@ class MemoryBuffer {
         }
 
         var this_content = new MemoryBufferContent(ins);
+        this_content.issue_time = current_cycle;
         if (ins.op === "ld") // Load
         {
             this_content.satisfy = true;
@@ -260,25 +262,85 @@ class MemoryBuffer {
             if(this.load_buffer[i] !== null && this.load_buffer[i].busy)
                 if(this.load_buffer[i].satisfy && !this.load_buffer[i].running)
                 {
-                    this.load_buffer[i].begin_time = current_cycle;
-                    this.load_buffer[i].running = true;
+                    var formerInsAllRunning = true;
+
+                    for(let j = 0; j < this.load_buffer_size; ++j)
+                    {
+                        if(this.load_buffer[j] !== null && this.load_buffer[j].issue_time < this.load_buffer[i].issue_time)
+                        {
+                            //某条load buffer里的更早issue的指令
+                            if( ! this.load_buffer[j].running )
+                            {
+                                formerInsAllRunning = false;
+                                break;
+                            }
+                        }
+                    }
+                    for(let j = 0; j < this.store_buffer_size; ++j)
+                    {
+                        if(this.store_buffer[j] !== null && this.store_buffer[j].issue_time < this.load_buffer[i].issue_time)
+                        {
+                            //某条store buffer里的更早issue的指令
+                            if( ! this.store_buffer[j].running )
+                            {
+                                formerInsAllRunning = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(formerInsAllRunning) // 如果之前issue的且还在buffer中的指令都已运行，就可以开始运行当前指令
+                    {
+                        this.load_buffer[i].begin_time = current_cycle;
+                        this.load_buffer[i].running = true;
+                    }
                 }
         for(let i = 0; i < this.store_buffer_size; ++i)
         {
             if(this.store_buffer[i] !== null && this.store_buffer[i].busy && !this.store_buffer[i].running)
             {
-                if(this.store_buffer[i].satisfy)
+                var formerInsAllRunning = true;
+              
+                for(let j = 0; j < this.load_buffer_size; ++j)
                 {
-                    this.store_buffer[i].begin_time = current_cycle;
-                    this.store_buffer[i].running = true;
-                }
-                else
-                {
-                    if(this.fpu.register_file.get_expression(this.store_buffer[i].rs) === "")
+                    if(this.load_buffer[j] !== null && this.load_buffer[j].issue_time < this.store_buffer[i].issue_time)
                     {
-                        this.store_buffer[i].satisfy = true;
+                        //某条load buffer里的更早issue的指令
+                        if( ! this.load_buffer[j].running )
+                        {
+                            formerInsAllRunning = false;
+                            break;
+                        }
+                    }
+                }
+                for(let j = 0; j < this.store_buffer_size; ++j)
+                {
+                    if(this.store_buffer[j] !== null && this.store_buffer[j].issue_time < this.store_buffer[i].issue_time)
+                    {
+                        //某条store buffer里的更早issue的指令
+                        if( ! this.store_buffer[j].running )
+                        {
+                            formerInsAllRunning = false;
+                            break;
+                        }
+                    }
+                }
+
+                if(formerInsAllRunning) // 如果之前issue的且还在buffer中的指令都已运行，就可以开始运行当前指令
+                {
+                    if(this.store_buffer[i].satisfy)  // 如果运行条件已满足则开始运行
+                    {
                         this.store_buffer[i].begin_time = current_cycle;
                         this.store_buffer[i].running = true;
+                    }
+                    else  //如果运行条件（之前）尚未满足，检查一下现在是否满足
+                    {
+                        if(this.fpu.register_file.get_expression(this.store_buffer[i].rs) === "")
+                        {
+                            this.store_buffer[i].satisfy = true;
+                            this.store_buffer[i].begin_time = current_cycle;
+                            this.store_buffer[i].running = true;
+                        }
                     }
                 }
             }
@@ -401,7 +463,7 @@ class ReservationStation {
         }
     }
     //发射一条指令
-    issue (ins) {
+    issue (ins, current_cycle) {
         let type = 0; // 1为加减，2为乘除
         if(ins.op === "addd" || ins.op === "subd")
             type = 1;
@@ -760,7 +822,7 @@ class FPU {
             {
                 this.instruction_status_change_time[to_issue] = {};
                 this.instruction_status_change_time[to_issue]["issue_time"] = this.cycle_passed;
-                device.issue(to_issue);
+                device.issue(to_issue, this.cycle_passed);
                 to_issue.status = "issue";
                 console.log("issued " + to_issue);
                 this.next_to_issue += 1;
