@@ -249,6 +249,7 @@ class MemoryBuffer {
                     // 设置写入寄存器的表达式
                     this_content.name = ins.op + this_content.rank.toString();
                     this.store_buffer[i] = this_content;
+                    console.log("store buffer issued " + i, this.store_buffer[i]);
                     break;
                 }
         }
@@ -262,13 +263,9 @@ class MemoryBuffer {
         // console.log("work -- load buffer[2] " + this.load_buffer[2]);
         // 判断是否开始执行，设置开始执行时间
         for(let i = 0; i < this.load_buffer_size; ++i)
-        {
-            
-                
+        {             
             if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].satisfy && !this.load_buffer[i].running)
             {
-                console.log("是否执行 " + i);
-                // console.log("load buffer size " + this.load_buffer_size);
                 var formerInsAllRunning = true;
 
                 for(let j = 0; j < this.load_buffer_size; ++j)
@@ -278,7 +275,8 @@ class MemoryBuffer {
                         //某条load buffer里的更早issue的指令
                         if( ! this.load_buffer[j].running )
                         {
-                            console.log("load_buffer not running:", j);
+                            console.log("the buffer being checked: ", i);
+                            console.log("the former buffer not running: ", j);
                             formerInsAllRunning = false;
                             break;
                         }
@@ -364,6 +362,7 @@ class MemoryBuffer {
                     // DO EXECUTE
                     this.load_buffer[i].data = this.fpu.memory.read(this.load_buffer[i].A);
                     console.log("load buffer execute", this.load_buffer[i]);
+                    this.fpu.instruction_status_change_time[this.load_buffer[i].ins]["finish_time"] = current_cycle;
                 }
             }
 
@@ -374,6 +373,8 @@ class MemoryBuffer {
                 {
                     // DO EXECUTE
                     this.store_buffer[i].data = this.fpu.register_file.read(this.store_buffer[i].rs);
+                    console.log("store buffer execute", this.store_buffer[i]);
+                    this.fpu.instruction_status_change_time[this.store_buffer[i].ins]["finish_time"] = current_cycle;
                 }
             }
         
@@ -386,6 +387,7 @@ class MemoryBuffer {
     write_back (current_cycle) {
         // console.log("writeback -- load buffer[2] " + this.load_buffer[2]);
         for(let i = 0; i < this.load_buffer_size; ++i)
+        {
             if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].running)
             {
                 if(current_cycle - this.load_buffer[i].begin_time === operations[this.load_buffer[i].op].exec_time + 1)
@@ -401,12 +403,14 @@ class MemoryBuffer {
                     this.load_buffer_used -= 1;
                     //写入这条指令的写回时间
                     this.fpu.instruction_status_change_time[this.load_buffer[i].ins]["write_time"] = current_cycle;
-                    this.fpu.instruction_status_change_time[this.load_buffer[i].ins]["finish_time"] = current_cycle - 1;
+                    // this.fpu.instruction_status_change_time[this.load_buffer[i].ins]["finish_time"] = current_cycle - 1;
                     this.load_buffer[i] = null;
                 }
             }
+        }
 
         for(let i = 0; i < this.store_buffer_size; ++i)
+        {
             if(this.store_buffer[i] !== null && this.store_buffer[i].busy && this.store_buffer[i].running)
             {
                 if(current_cycle - this.store_buffer[i].begin_time === operations[this.store_buffer[i].op].exec_time + 1)
@@ -417,10 +421,11 @@ class MemoryBuffer {
                     this.store_buffer_used -= 1;
                     //写入这条指令的写回时间
                     this.fpu.instruction_status_change_time[this.store_buffer[i].ins]["write_time"] = current_cycle;
-                    this.fpu.instruction_status_change_time[this.store_buffer[i].ins]["finish_time"] = current_cycle - 1;
+                    // this.fpu.instruction_status_change_time[this.store_buffer[i].ins]["finish_time"] = current_cycle - 1;
                     this.store_buffer[i] = null;
                 }
             }
+        }
 
 
     }
@@ -868,8 +873,9 @@ $(function () {
             fpu.add_instruction(new Instruction("ld", "F2", "+45", ""));
             fpu.add_instruction(new Instruction("ld", "F10", "+5", ""));
             fpu.add_instruction(new Instruction("addd", "F0", "F6", "F2"));
-            fpu.add_instruction(new Instruction("st", "F0", "+1", ""));
             fpu.add_instruction(new Instruction("st", "F10", "+1", ""));
+            fpu.add_instruction(new Instruction("st", "F0", "+1", ""));
+
             // fpu.add_instruction(new Instruction("multd", "F0", "F2", "F6"));
             // fpu.add_instruction(new Instruction("subd", "F8", "F6", "F2"));
             // fpu.add_instruction(new Instruction("divd", "F10", "F0", "F6"));
