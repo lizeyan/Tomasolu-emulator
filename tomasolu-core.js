@@ -355,7 +355,7 @@ class MemoryBuffer {
     toString() {
         var jsonLoadBuffer = JSON.stringify(this.load_buffer);
         var jsonStoreBuffer = JSON.stringify(this.store_buffer);
-        var rt = "Load Buffer:\n" + jsonLoadBuffer + "\nStore Buffer:\n" + jsonStoreBuffer;
+        var rt = "\nLoad Buffer:\n" + jsonLoadBuffer + "\nStore Buffer:\n" + jsonStoreBuffer;
         return rt;
     }
 }
@@ -573,6 +573,9 @@ class ReservationStation {
         for(let i = 0; i < this.add_size; ++i)
             if(this.add_reservation_stations[i] != null && this.add_reservation_stations[i].busy)
                 this.add_reservation_stations[i].compute_time += 1;
+        for(let i = 0; i < this.multi_size; ++i)
+            if(this.multi_reservation_stations[i] != null && this.multi_reservation_stations[i].busy)
+                this.multi_reservation_stations[i].compute_time += 1;
     }
 
     /*
@@ -580,22 +583,29 @@ class ReservationStation {
     * current_cycle: 当前的时钟周期数
     */
     write_back (current_cycle) {
-        for(let i = 0; i < this.add_size; ++i){
-            if(this.add_reservation_stations[i] == null) continue;
+        for(let i = 0; i < this.add_size; ++i)
+        {
+            if(this.add_reservation_stations[i] === null) 
+                continue;
             // 如果该指令已经计算完毕，那么进行写回操作
-            if(this.add_reservation_stations[i].compute_time == operations[this.add_reservation_stations[i].op].exec_time){
+            if(this.add_reservation_stations[i].compute_time === operations[this.add_reservation_stations[i].op].exec_time)
+            {
                 // 如果要写入的寄存器的名称和这个保留站项的名字一致，就写入
-                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].rs) == this.add_reservation_stations[i].name){
+                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].rs) === this.add_reservation_stations[i].name)
+                {
                     this.fpu.register_file.write(this.add_reservation_stations[i].rs, this.add_reservation_stations[i].ans);
                     //已写回的表达式为空
                     this.fpu.register_file.set_expression(this.add_reservation_stations[i].rs, "");
+                    console.log("add writeback rs : ", this.add_reservation_stations[i].rs)
                 }
                 //释放这个保留站的位置
                 this.add_used -= 1;
                 //释放计算资源
+                console.log("before release compute",this.add_reservation_stations[i]);
                 for(let i = 0; i < add_compute_num; ++i)
-                    if(this.add_compute_work[i] == this.add_reservation_stations[i].rank)
-                        this.add_compute_work[i] = -1;
+                    if(this.add_reservation_stations[i] === null)
+                        if(this.add_compute_work[i] === this.add_reservation_stations[i].rank)
+                            this.add_compute_work[i] = -1;
                 //写入这条指令的写回时间
                 this.fpu.instruction_status_change_time[this.add_reservation_stations[i].ins]["write_time"] = current_cycle;
                 this.fpu.instruction_status_change_time[this.add_reservation_stations[i].ins]["finish_time"] = current_cycle - 1;
@@ -603,12 +613,16 @@ class ReservationStation {
             }
         }
 
-        for(let i = 0; i < this.multi_size; ++i){
-            if(this.multi_reservation_stations[i] == null) continue;
+        for(let i = 0; i < this.multi_size; ++i)
+        {
+            if(this.multi_reservation_stations[i] == null) 
+                continue;
             // 如果该指令已经计算完毕，那么进行写回操作
-            if(this.multi_reservation_stations[i].compute_time == operations[this.multi_reservation_stations[i].op].exec_time){
+            if(this.multi_reservation_stations[i].compute_time == operations[this.multi_reservation_stations[i].op].exec_time)
+            {
                 // 如果要写入的寄存器的名称和这个保留站项的名字一致，就写入
-                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].rs) == this.multi_reservation_stations[i].name){
+                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].rs) == this.multi_reservation_stations[i].name)
+                {
                     this.fpu.register_file.write(this.multi_reservation_stations[i].rs, this.multi_reservation_stations[i].ans);
                     //已写回的表达式为空
                     this.fpu.register_file.set_expression(this.multi_reservation_stations[i].rs, "");
@@ -750,10 +764,10 @@ $(function () {
             let fpu = new FPU();
             fpu.add_instruction(new Instruction("ld", "F6", "+34", ""));
             fpu.add_instruction(new Instruction("ld", "F2", "+45", ""));
-            fpu.add_instruction(new Instruction("multd", "F2", "F4", "F0"));
-            fpu.add_instruction(new Instruction("subd", "F6", "F2", "F8"));
-            fpu.add_instruction(new Instruction("divd", "F0", "F6", "F10"));
-            fpu.add_instruction(new Instruction("addd", "F8", "F2", "F6"));
+            fpu.add_instruction(new Instruction("multd", "F0", "F2", "F4"));
+            fpu.add_instruction(new Instruction("subd", "F8", "F6", "F2"));
+            fpu.add_instruction(new Instruction("divd", "F10", "F0", "F6"));
+            fpu.add_instruction(new Instruction("addd", "F6", "F8", "F2"));
             let terminated = false;
             for (let i = 0; i < 70; ++i) {
                 fpu.single_cycle_pass();
@@ -769,7 +783,7 @@ $(function () {
                 console.log("next to issue:", fpu.next_to_issue);
                 console.log("next inst to issue:", fpu.instruction_list[fpu.next_to_issue]);
                 console.log("memory buffer ", fpu.memory_buffer.toString());
-                console.log("registers ", fpu.register_file.toString());
+                console.log("registers\n", fpu.register_file.toString());
                 throw "unterminated sequence";
             }
             
@@ -778,5 +792,6 @@ $(function () {
 
         }
     ];
-    apply_test(test_function_list, alert);
+    // apply_test(test_function_list, alert);
+    apply_test(test_function_list);
 });
