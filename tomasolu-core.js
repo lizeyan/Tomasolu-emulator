@@ -145,7 +145,8 @@ class Memory {
     }
 
     toString() {
-        //TODO
+        var jsonMemory = JSON.stringify(this.data);
+        return jsonMemory;
     }
 }
 
@@ -349,6 +350,13 @@ class MemoryBuffer {
             }
 
 
+    }
+
+    toString() {
+        var jsonLoadBuffer = JSON.stringify(this.load_buffer);
+        var jsonStoreBuffer = JSON.stringify(this.store_buffer);
+        var rt = "Load Buffer:\n" + jsonLoadBuffer + "\nStore Buffer:\n" + jsonStoreBuffer;
+        return rt;
     }
 }
 
@@ -760,7 +768,8 @@ $(function () {
                 console.log("\n\n你们真是逆天狂神！！！\n\n\n");
                 console.log("next to issue:", fpu.next_to_issue);
                 console.log("next inst to issue:", fpu.instruction_list[fpu.next_to_issue]);
-                console.log("load buffer ", fpu.memory_buffer.load_buffer);
+                console.log("memory buffer ", fpu.memory_buffer.toString());
+                console.log("registers ", fpu.register_file.toString());
                 throw "unterminated sequence";
             }
             
