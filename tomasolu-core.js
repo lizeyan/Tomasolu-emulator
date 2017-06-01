@@ -337,7 +337,7 @@ class MemoryBuffer {
         for(let i = 0; i < this.store_buffer_size; ++i)
             if(this.store_buffer[i] !== null && this.store_buffer[i].busy)
             {
-                if(current_cycle - this.store_buffer[i].begin_time === operations[this.lstore_buffer[i].op].exec_time + 1)
+                if(current_cycle - this.store_buffer[i].begin_time === operations[this.store_buffer[i].op].exec_time + 1)
                 {
                     // DO WRITE MEMORY
                     this.fpu.memory.write(this.store_buffer[i].A, this.store_buffer[i].data);
@@ -794,10 +794,13 @@ $(function () {
             let fpu = new FPU();
             fpu.add_instruction(new Instruction("ld", "F6", "+34", ""));
             fpu.add_instruction(new Instruction("ld", "F2", "+45", ""));
-            fpu.add_instruction(new Instruction("multd", "F0", "F2", "F6"));
-            fpu.add_instruction(new Instruction("subd", "F8", "F6", "F2"));
-            fpu.add_instruction(new Instruction("divd", "F10", "F0", "F6"));
-            fpu.add_instruction(new Instruction("addd", "F6", "F10", "F2"));
+            fpu.add_instruction(new Instruction("divd", "F0", "F6", "F2"));
+            fpu.add_instruction(new Instruction("st", "F0", "+1", ""));
+            fpu.add_instruction(new Instruction("st", "F10", "+1", ""));
+            // fpu.add_instruction(new Instruction("multd", "F0", "F2", "F6"));
+            // fpu.add_instruction(new Instruction("subd", "F8", "F6", "F2"));
+            // fpu.add_instruction(new Instruction("divd", "F10", "F0", "F6"));
+            // fpu.add_instruction(new Instruction("addd", "F6", "F10", "F2"));
             let terminated = false;
             for (let i = 0; i < 70; ++i) {
                 fpu.single_cycle_pass();
@@ -814,7 +817,7 @@ $(function () {
                 console.log("next inst to issue:", fpu.instruction_list[fpu.next_to_issue]);
                 console.log("memory buffer ", fpu.memory_buffer.toString());
                 console.log("registers\n", fpu.register_file.toString());
-                console.log(fpu.instruction_list[0].status)
+                console.log("memory\n", fpu.memory.toString());
                 throw "unterminated sequence";
             }
             
