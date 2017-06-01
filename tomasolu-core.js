@@ -213,6 +213,7 @@ class MemoryBuffer {
             let rank = 0;
 
             for(let i = 0; i < this.load_buffer_size; ++i)
+            {
                 if(this.load_buffer[i] === null)
                 {
                     
@@ -222,10 +223,10 @@ class MemoryBuffer {
                     this_content.name = ins.op + this_content.rank.toString();
                     this.load_buffer[i] = this_content;
                     this.fpu.register_file.set_expression(ins.rs, this_content.name);
-                    console.log("load buffer issued", this.load_buffer[i]);
+                    console.log("load buffer issued " + i, this.load_buffer[i]);
                     break;
                 }
-            
+            }
         }
         else // Store
         {
@@ -258,45 +259,51 @@ class MemoryBuffer {
     * current_cycle: 当前的时钟周期数
      */
     work (current_cycle) {
-
+        // console.log("work -- load buffer[2] " + this.load_buffer[2]);
         // 判断是否开始执行，设置开始执行时间
         for(let i = 0; i < this.load_buffer_size; ++i)
-            if(this.load_buffer[i] !== null && this.load_buffer[i].busy)
-                if(this.load_buffer[i].satisfy && !this.load_buffer[i].running)
+        {
+            
+                
+            if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].satisfy && !this.load_buffer[i].running)
+            {
+                console.log("是否执行 " + i);
+                // console.log("load buffer size " + this.load_buffer_size);
+                var formerInsAllRunning = true;
+
+                for(let j = 0; j < this.load_buffer_size; ++j)
                 {
-                    var formerInsAllRunning = true;
-
-                    for(let j = 0; j < this.load_buffer_size; ++j)
+                    if(this.load_buffer[j] !== null && this.load_buffer[j].issue_time < this.load_buffer[i].issue_time)
                     {
-                        if(this.load_buffer[j] !== null && this.load_buffer[j].issue_time < this.load_buffer[i].issue_time)
+                        //某条load buffer里的更早issue的指令
+                        if( ! this.load_buffer[j].running )
                         {
-                            //某条load buffer里的更早issue的指令
-                            if( ! this.load_buffer[j].running )
-                            {
-                                formerInsAllRunning = false;
-                                break;
-                            }
+                            console.log("load_buffer not running:", j);
+                            formerInsAllRunning = false;
+                            break;
                         }
-                    }
-                    for(let j = 0; j < this.store_buffer_size; ++j)
-                    {
-                        if(this.store_buffer[j] !== null && this.store_buffer[j].issue_time < this.load_buffer[i].issue_time)
-                        {
-                            //某条store buffer里的更早issue的指令
-                            if( ! this.store_buffer[j].running )
-                            {
-                                formerInsAllRunning = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    if(formerInsAllRunning) // 如果之前issue的且还在buffer中的指令都已运行，就可以开始运行当前指令
-                    {
-                        this.load_buffer[i].begin_time = current_cycle;
-                        this.load_buffer[i].running = true;
                     }
                 }
+                for(let j = 0; j < this.store_buffer_size; ++j)
+                {
+                    if(this.store_buffer[j] !== null && this.store_buffer[j].issue_time < this.load_buffer[i].issue_time)
+                    {
+                        //某条store buffer里的更早issue的指令
+                        if( ! this.store_buffer[j].running )
+                        {
+                            formerInsAllRunning = false;
+                            break;
+                        }
+                    }
+                }
+
+                if(formerInsAllRunning) // 如果之前issue的且还在buffer中的指令都已运行，就可以开始运行当前指令
+                {
+                    this.load_buffer[i].begin_time = current_cycle;
+                    this.load_buffer[i].running = true;
+                }
+            }
+        }
         for(let i = 0; i < this.store_buffer_size; ++i)
         {
             if(this.store_buffer[i] !== null && this.store_buffer[i].busy && !this.store_buffer[i].running)
@@ -377,8 +384,9 @@ class MemoryBuffer {
     * current_cycle: 当前的时钟周期数
     */
     write_back (current_cycle) {
+        // console.log("writeback -- load buffer[2] " + this.load_buffer[2]);
         for(let i = 0; i < this.load_buffer_size; ++i)
-            if(this.load_buffer[i] !== null && this.load_buffer[i].busy)
+            if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].running)
             {
                 if(current_cycle - this.load_buffer[i].begin_time === operations[this.load_buffer[i].op].exec_time + 1)
                 {
@@ -399,7 +407,7 @@ class MemoryBuffer {
             }
 
         for(let i = 0; i < this.store_buffer_size; ++i)
-            if(this.store_buffer[i] !== null && this.store_buffer[i].busy)
+            if(this.store_buffer[i] !== null && this.store_buffer[i].busy && this.store_buffer[i].running)
             {
                 if(current_cycle - this.store_buffer[i].begin_time === operations[this.store_buffer[i].op].exec_time + 1)
                 {
@@ -803,7 +811,7 @@ class FPU {
 
     single_cycle_pass() {
         this.cycle_passed += 1;
-        console.log("current cycle: " + this.cycle_passed);
+        console.log("\ncycle: " + this.cycle_passed);
 
         // 发射一条指令
         if (this.next_to_issue < this.num_instruction()) // has unissued instructions
@@ -826,7 +834,7 @@ class FPU {
                 this.instruction_status_change_time[to_issue]["issue_time"] = this.cycle_passed;
                 device.issue(to_issue, this.cycle_passed);
                 to_issue.status = "issue";
-                console.log("issued " + to_issue);
+                // console.log("issued " + to_issue);
                 this.next_to_issue += 1;
             }
         }
