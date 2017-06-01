@@ -265,7 +265,7 @@ class MemoryBuffer {
                 }
         for(let i = 0; i < this.store_buffer_size; ++i)
         {
-            if(this.store_buffer[i] !== null && this.store_buffer[i].busy && !this.load_buffer[i].running)
+            if(this.store_buffer[i] !== null && this.store_buffer[i].busy && !this.store_buffer[i].running)
             {
                 if(this.store_buffer[i].satisfy)
                 {
@@ -568,7 +568,7 @@ class ReservationStation {
                 //为min_rank的保留站项分配计算资源
                 this.multi_compute_work[i] = this.multi_reservation_stations[min_rank].rank;
                 this.multi_reservation_stations[min_rank].busy = true;
-                this.add_reservation_stations[min_rank].ins.status = "exec";
+                this.multi_reservation_stations[min_rank].ins.status = "exec";
                 this.multi_reservation_stations[min_rank].ans = operations[this.multi_reservation_stations[min_rank].op].exec_result(this.multi_reservation_stations[min_rank].vj, this.multi_reservation_stations[min_rank].vk);
             }
         }
