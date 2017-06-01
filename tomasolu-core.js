@@ -77,7 +77,7 @@ class Instruction {
 }
 
 class ReservationContent{
-    constructor(op, rs, ins, satisfy=false, busy=false, time=0, name="", vi="", vk="", qi="", qk=""){
+    constructor(op, rs, ins, satisfy=false, busy=false, time=0, name="", vj="", vk="", qj="", qk=""){
         this.name = name;
         this.satisfy = satisfy; //是否满足两个寄存器都可取
         this.busy = busy;
@@ -85,9 +85,9 @@ class ReservationContent{
         this.ins = ins;
         this.op = op;
         this.rs = rs;
-        this.vi = vi;
+        this.vj = vj;
         this.vk = vk;
-        this.qi = qi;
+        this.qj = qj;
         this.qk = qk;
         this.compute_time = 0; //这条指令已经计算的时间
         this.rank = 0; //在保留站的第几位
@@ -408,7 +408,6 @@ class ReservationStation {
             type = 2;
         else
             return;
-        // console.log("Weixybaba "+ins+" type = "+type);
         // 如果保留站已满，那么issue失败
         if (type === 1)
         {
@@ -429,18 +428,18 @@ class ReservationStation {
         var this_content = new ReservationContent(ins.op, ins.rs, ins);
         // 检测rt寄存器是否可用
         if(this.fpu.register_file.get_expression(ins.rt) == ""){
-            this_content.vi = this.fpu.register_file.read(ins.rt);
+            this_content.vj = this.fpu.register_file.read(ins.rt);
         }else{
-            this_content.qi = this.fpu.register_file.get_expression(ins.rt);
+            this_content.qj = this.fpu.register_file.get_expression(ins.rt);
         }
         // 检测rd寄存器是否可用
         if(this.fpu.register_file.get_expression(ins.rd) == ""){
-            this_content.vj = this.fpu.register_file.read(ins.rd)
+            this_content.vk = this.fpu.register_file.read(ins.rd)
         }else{
-            this_content.qj = this.fpu.register_file.get_expression(ins.rd);
+            this_content.qk = this.fpu.register_file.get_expression(ins.rd);
         }
         // 判断是否两个寄存器都可用，设置satisfy
-        if(this_content.qi == "" && this_content.qj == "")
+        if(this_content.qj == "" && this_content.qk == "")
             this_content.satisfy = true;
         else
             this_content.satisfy = false;
@@ -475,7 +474,7 @@ class ReservationStation {
                     if(this.add_compute_work[i] == -1){
                         this.add_compute_work[i] = this_content.rank;
                         this_content.busy = true;
-                        this_content.ans = operations[this_content.op].exec_result(this_content.vi, this_content.vk);
+                        this_content.ans = operations[this_content.op].exec_result(this_content.vj, this_content.vk);
                         break;
                     }
             }else{
@@ -483,7 +482,7 @@ class ReservationStation {
                     if(this.multi_compute_work[i] == -1){
                         this.multi_compute_work[i] = this_content.rank;
                         this_content.busy = true;
-                        this_content.ans = operations[this_content.op].exec_result(this_content.vi, this_content.vk);
+                        this_content.ans = operations[this_content.op].exec_result(this_content.vj, this_content.vk);
                         break;
                     }
             }
@@ -499,29 +498,29 @@ class ReservationStation {
         for(let i = 0; i < this.add_size; ++i){
             //如果不存在或已经满足条件直接跳过
             if(this.add_reservation_stations[i] == null || this.add_reservation_stations[i].satisfy) continue;
-            //更新vi和vj
-            if(this.add_reservation_stations[i].vi == "")
-                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rt) == "")
-                    this.add_reservation_stations[i].vi = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rt)
+            //更新vj和vk
             if(this.add_reservation_stations[i].vj == "")
+                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rt) == "")
+                    this.add_reservation_stations[i].vj = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rt)
+            if(this.add_reservation_stations[i].vk == "")
                 if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rd) == "")
-                    this.add_reservation_stations[i].vj = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rd)
+                    this.add_reservation_stations[i].vk = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rd)
             //更新所有满足条件的保留站项目
-            if(this.add_reservation_stations[i].vi != "" && this.add_reservation_stations[i].vj != "")
+            if(this.add_reservation_stations[i].vj != "" && this.add_reservation_stations[i].vk != "")
                 this.add_reservation_stations[i].satisfy = true;
         }
         for(let i = 0; i < this.multi_size; ++i){
             //如果不存在或已经满足条件直接跳过
             if(this.multi_reservation_stations[i] == null || this.multi_reservation_stations[i].satisfy) continue;
-            //更新vi和vj
-            if(this.multi_reservation_stations[i].vi == "")
-                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rt) == "")
-                    this.multi_reservation_stations[i].vi = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rt)
+            //更新vj和vk
             if(this.multi_reservation_stations[i].vj == "")
+                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rt) == "")
+                    this.multi_reservation_stations[i].vj = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rt)
+            if(this.multi_reservation_stations[i].vk == "")
                 if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rd) == "")
-                    this.multi_reservation_stations[i].vj = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rd)
+                    this.multi_reservation_stations[i].vk = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rd)
             //更新所有满足条件的保留站项目
-            if(this.multi_reservation_stations[i].vi != "" && this.multi_reservation_stations[i].vj != "")
+            if(this.multi_reservation_stations[i].vj != "" && this.multi_reservation_stations[i].vk != "")
                 this.multi_reservation_stations[i].satisfy = true;
         }
 
@@ -544,7 +543,7 @@ class ReservationStation {
                 //为min_rank的保留站项分配计算资源
                 this.add_compute_work[i] = this.add_reservation_stations[min_rank].rank;
                 this.add_reservation_stations[min_rank].busy = true;
-                this.add_reservation_stations[min_rank].ans = operations[this.add_reservation_stations[min_rank].op].exec_result(this.add_reservation_stations[min_rank].vi, this.add_reservation_stations[min_rank].vk);
+                this.add_reservation_stations[min_rank].ans = operations[this.add_reservation_stations[min_rank].op].exec_result(this.add_reservation_stations[min_rank].vj, this.add_reservation_stations[min_rank].vk);
             }
         }
         for(let i = 0; i < multi_compute_num; ++i){
@@ -565,7 +564,7 @@ class ReservationStation {
                 //为min_rank的保留站项分配计算资源
                 this.multi_compute_work[i] = this.multi_reservation_stations[min_rank].rank;
                 this.multi_reservation_stations[min_rank].busy = true;
-                this.multi_reservation_stations[min_rank].ans = operations[this.multi_reservation_stations[min_rank].op].exec_result(this.multi_reservation_stations[min_rank].vi, this.multi_reservation_stations[min_rank].vk);
+                this.multi_reservation_stations[min_rank].ans = operations[this.multi_reservation_stations[min_rank].op].exec_result(this.multi_reservation_stations[min_rank].vj, this.multi_reservation_stations[min_rank].vk);
             }
         }
 
