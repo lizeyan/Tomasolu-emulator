@@ -69,6 +69,7 @@ class Instruction {
         this.rt = rt;
         this.rd = rd;
         this.status = ""; //指令状态: queue, issue, exec, exec_finished, finished
+        this.status_change_time = {}; // 指令的运行状态的三个时间，发射指令时间(issue_time)，执行完毕时间(finish_time)，写回结果时间(write_time)
         this.operation = operations[op];
     }
 
@@ -362,7 +363,7 @@ class MemoryBuffer {
                     // DO EXECUTE
                     this.load_buffer[i].data = this.fpu.memory.read(this.load_buffer[i].A);
                     console.log("load buffer execute", this.load_buffer[i]);
-                    this.fpu.instruction_status_change_time[this.load_buffer[i].ins]["finish_time"] = current_cycle;
+                    this.load_buffer[i].ins.status_change_time["finish_time"] = current_cycle;
                 }
             }
 
@@ -374,7 +375,7 @@ class MemoryBuffer {
                     // DO EXECUTE
                     this.store_buffer[i].data = this.fpu.register_file.read(this.store_buffer[i].rs);
                     console.log("store buffer execute", this.store_buffer[i]);
-                    this.fpu.instruction_status_change_time[this.store_buffer[i].ins]["finish_time"] = current_cycle;
+                    this.store_buffer[i].ins.status_change_time["finish_time"] = current_cycle;
                 }
             }
         
@@ -402,8 +403,7 @@ class MemoryBuffer {
                 
                     this.load_buffer_used -= 1;
                     //写入这条指令的写回时间
-                    this.fpu.instruction_status_change_time[this.load_buffer[i].ins]["write_time"] = current_cycle;
-                    // this.fpu.instruction_status_change_time[this.load_buffer[i].ins]["finish_time"] = current_cycle - 1;
+                    this.load_buffer[i].ins.status_change_time["write_time"] = current_cycle;
                     this.load_buffer[i] = null;
                 }
             }
@@ -420,8 +420,7 @@ class MemoryBuffer {
                     
                     this.store_buffer_used -= 1;
                     //写入这条指令的写回时间
-                    this.fpu.instruction_status_change_time[this.store_buffer[i].ins]["write_time"] = current_cycle;
-                    // this.fpu.instruction_status_change_time[this.store_buffer[i].ins]["finish_time"] = current_cycle - 1;
+                    this.store_buffer[i].ins.status_change_time["write_time"] = current_cycle;
                     this.store_buffer[i] = null;
                 }
             }
@@ -613,8 +612,8 @@ class ReservationStation {
                 let find = false;
                 for(let j = 0; j < this.add_size; ++j){
                     if(this.add_reservation_stations[j] !== null && this.add_reservation_stations[j].satisfy && !this.add_reservation_stations[j].busy 
-                        && this.fpu.instruction_status_change_time[this.add_reservation_stations[j].ins]["issue_time"] < min_time){
-                        min_time = this.fpu.instruction_status_change_time[this.add_reservation_stations[j].ins]["issue_time"];
+                        && this.add_reservation_stations[j].ins.status_change_time["issue_time"] < min_time){
+                        min_time = this.add_reservation_stations[j].ins.status_change_time["issue_time"];
                         min_rank = j;
                         find = true;
                     }
@@ -635,8 +634,8 @@ class ReservationStation {
                 let find = false;
                 for(let j = 0; j < this.multi_size; ++j){
                     if(this.multi_reservation_stations[j] !== null && this.multi_reservation_stations[j].satisfy && !this.multi_reservation_stations[j].busy 
-                        && this.fpu.instruction_status_change_time[this.multi_reservation_stations[j].ins]["issue_time"] < min_time){
-                        min_time = this.fpu.instruction_status_change_time[this.multi_reservation_stations[j].ins]["issue_time"];
+                        && this.multi_reservation_stations[j].ins.status_change_time["issue_time"] < min_time){
+                        min_time = this.multi_reservation_stations[j].ins.status_change_time["issue_time"];
                         min_rank = j;
                         find = true;
                     }
@@ -674,7 +673,7 @@ class ReservationStation {
                     if(this.add_compute_work[j] === this.add_reservation_stations[i].rank)
                         this.add_compute_work[j] = -1;
                 //写入这条指令的结束时间
-                this.fpu.instruction_status_change_time[this.add_reservation_stations[i].ins]["finish_time"] = current_cycle;
+                this.add_reservation_stations[i].ins.status_change_time["finish_time"] = current_cycle;
                 this.add_reservation_stations[i].ins.status = "exec_finished";
             }
         }
@@ -693,7 +692,7 @@ class ReservationStation {
                     if(this.multi_compute_work[j] === this.multi_reservation_stations[i].rank)
                         this.multi_compute_work[j] = -1;
                 //写入这条指令的结束时间
-                this.fpu.instruction_status_change_time[this.multi_reservation_stations[i].ins]["finish_time"] = current_cycle;
+                this.multi_reservation_stations[i].ins.status_change_time["finish_time"] = current_cycle;
                 this.multi_reservation_stations[i].ins.status = "exec_finished";
             }
         }
@@ -720,7 +719,7 @@ class ReservationStation {
                     console.log("add writeback rs : ", this.add_reservation_stations[i].rs)
                 }
                 //写入这条指令的写回时间
-                this.fpu.instruction_status_change_time[this.add_reservation_stations[i].ins]["write_time"] = current_cycle;
+                this.add_reservation_stations[i].ins.status_change_time["write_time"] = current_cycle;
                 this.add_reservation_stations[i].ins.status = "finished";
                 this.add_reservation_stations[i] = null;
             }
@@ -741,7 +740,7 @@ class ReservationStation {
                     this.fpu.register_file.set_expression(this.multi_reservation_stations[i].rs, "");
                 }
                 //写入这条指令的写回时间
-                this.fpu.instruction_status_change_time[this.multi_reservation_stations[i].ins]["write_time"] = current_cycle;
+                this.multi_reservation_stations[i].ins.status_change_time["write_time"] = current_cycle;
                 this.multi_reservation_stations[i].ins.status = "finished";
                 this.multi_reservation_stations[i] = null;
             }
@@ -789,7 +788,6 @@ class RegisterFile {
 class FPU {
     constructor(memory=new Memory(), load_buffer_size=3, store_buffer_size=3) {
         this.instruction_list = []; // 指令列表
-        this.instruction_status_change_time = {}; // 指令的运行状态的三个时间，发射指令时间(issue_time)，执行完毕时间(finish_time)，写回结果时间(write_time)
         this.next_to_issue = 0; //下一条要被issue的指令的index
         this.cycle_passed = 0; //当前过去了几个时钟周期
 
@@ -835,8 +833,7 @@ class FPU {
             // 内存读写缓冲区或保留站有空闲，可以发射指令
             if (device.is_free(to_issue))
             {
-                this.instruction_status_change_time[to_issue] = {};
-                this.instruction_status_change_time[to_issue]["issue_time"] = this.cycle_passed;
+                to_issue.status_change_time["issue_time"] = this.cycle_passed;
                 device.issue(to_issue, this.cycle_passed);
                 to_issue.status = "issue";
                 // console.log("issued " + to_issue);
