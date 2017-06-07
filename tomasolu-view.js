@@ -29,6 +29,7 @@ Vue.component("tomasolu-view", {
                 [],
             ],
             forward_step: 1,
+            alert_list: [],
         };
     },
     methods: {
@@ -37,7 +38,7 @@ Vue.component("tomasolu-view", {
             this.$forceUpdate();
         },
         last_cycle: function () {
-            alert("last cycle");
+            this.popup_alert("not implemented", "danger");
         },
         range: function (begin, stop, step=1) {
             let ret = [];
@@ -65,10 +66,19 @@ Vue.component("tomasolu-view", {
                 this.fpu.add_instruction(new Instruction(ins.op, ins.rs, ins.rt, ins.rd));
             }, this));
             this.loading = false;
+        },
+        popup_alert: function(msg, type="default", strong="") {
+            this.alert_list.push({type: type, strong: strong, msg: msg});
         }
-    },
+    }
+    ,
     computed: {
     }
+});
+
+Vue.component("alert-banning", {
+    template: $("#tmplt-alert").html(),
+    props: ["type", "strong", "msg"]
 });
 
 let app = new Vue({

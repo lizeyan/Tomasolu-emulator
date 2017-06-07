@@ -67,10 +67,10 @@
 
                         <form class="navbar-form navbar-left">
                             <div class="form-group">
-                                <label>Forward Step:</label><input type="number" class="form-control" title="Forward Step" v-model="forward_step">
+                                <label>Forward Step:</label><input type="number" class="form-control" title="Forward Step" v-model="forward_step" min="1" max="999">
                             </div>
                             <div class="form-group">
-                                <label>Current Cycle</label><input type="number" class="form-control" title="Forward Step" v-model="fpu.cycle_passed" readonly>
+                                <label>Current Cycle</label><input type="number" class="form-control" title="Forward Step" v-model="fpu.cycle_passed" readonly min="0" max="99999">
                             </div>
                         </form>
                         <ul class="nav navbar-nav navbar-right" v-if="loading">
@@ -82,6 +82,9 @@
                             </li>
                         </ul>
                     </div>
+                </div>
+                <div class="te-view-alert-box">
+                    <alert-banning v-for="info in alert_list" :type="info.type" :strong="info.strong" :msg="info.msg" :key="info"></alert-banning>
                 </div>
             </nav>
         </div>
@@ -332,6 +335,13 @@
                 </div>
             </div>
         </div>
+    </div>
+</template>
+
+<template id="tmplt-alert">
+    <div :class="'alert alert-'+type+' alert-dismissible'" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <strong>{{ strong }}</strong> {{ msg }}
     </div>
 </template>
 
