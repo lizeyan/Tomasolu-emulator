@@ -705,6 +705,27 @@ class ReservationStation {
                     this.fpu.register_file.set_expression(this.add_reservation_stations[i].rd, "");
                     console.log("add writeback rd : ", this.add_reservation_stations[i].rd)
                 }
+                // 更新所有保留站中vj vk和其名字相同的项
+                for(let j = 0; j < this.add_size; ++j){
+                    if(this.add_reservation_stations[j] === null)
+                        continue;
+                    if(this.add_reservation_stations[j].vj === "" && this.add_reservation_stations[j].qj === this.add_reservation_stations[i].name){
+                        this.add_reservation_stations[j].vj = this.add_reservation_stations[i].ans;
+                    }
+                    if(this.add_reservation_stations[j].vk === "" && this.add_reservation_stations[j].qk === this.add_reservation_stations[i].name){
+                        this.add_reservation_stations[j].vk = this.add_reservation_stations[i].ans;
+                    }
+                }
+                for(let j = 0; j < this.multi_size; ++j){
+                    if(this.multi_reservation_stations[j] === null)
+                        continue;
+                    if(this.multi_reservation_stations[j].vj === "" && this.multi_reservation_stations[j].qj === this.add_reservation_stations[i].name){
+                        this.multi_reservation_stations[j].vj = this.add_reservation_stations[i].ans;
+                    }
+                    if(this.multi_reservation_stations[j].vk === "" && this.multi_reservation_stations[j].qk === this.add_reservation_stations[i].name){
+                        this.multi_reservation_stations[j].vk = this.add_reservation_stations[i].ans;
+                    }
+                }
                 //写入这条指令的写回时间
                 this.add_reservation_stations[i].ins.status_change_time["write_time"] = current_cycle;
                 this.add_reservation_stations[i].ins.status = "finish";
@@ -725,6 +746,27 @@ class ReservationStation {
                     this.fpu.register_file.write(this.multi_reservation_stations[i].rd, this.multi_reservation_stations[i].ans);
                     //已写回的表达式为空
                     this.fpu.register_file.set_expression(this.multi_reservation_stations[i].rd, "");
+                }
+                // 更新所有保留站中vj vk和其名字相同的项
+                for(let j = 0; j < this.add_size; ++j){
+                    if(this.add_reservation_stations[j] === null)
+                        continue;
+                    if(this.add_reservation_stations[j].vj === "" && this.add_reservation_stations[j].qj === this.multi_reservation_stations[i].name){
+                        this.add_reservation_stations[j].vj = this.multi_reservation_stations[i].ans;
+                    }
+                    if(this.add_reservation_stations[j].vk === "" && this.add_reservation_stations[j].qk === this.multi_reservation_stations[i].name){
+                        this.add_reservation_stations[j].vk = this.multi_reservation_stations[i].ans;
+                    }
+                }
+                for(let j = 0; j < this.multi_size; ++j){
+                    if(this.multi_reservation_stations[j] === null)
+                        continue;
+                    if(this.multi_reservation_stations[j].vj === "" && this.multi_reservation_stations[j].qj === this.multi_reservation_stations[i].name){
+                        this.multi_reservation_stations[j].vj = this.multi_reservation_stations[i].ans;
+                    }
+                    if(this.multi_reservation_stations[j].vk === "" && this.multi_reservation_stations[j].qk === this.multi_reservation_stations[i].name){
+                        this.multi_reservation_stations[j].vk = this.multi_reservation_stations[i].ans;
+                    }
                 }
                 //写入这条指令的写回时间
                 this.multi_reservation_stations[i].ins.status_change_time["write_time"] = current_cycle;
