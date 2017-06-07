@@ -838,8 +838,9 @@ class FPU {
         if (n < 0) {
             console.log("warning: Do not support time machine now")
         }
-        for (let i = 0; i < n; ++i)
+        for (let i = 0; i < n; ++i) {
             this.single_cycle_pass();
+        }
     }
 
     single_cycle_pass() {

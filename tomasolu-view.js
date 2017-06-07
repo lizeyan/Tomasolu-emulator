@@ -20,7 +20,18 @@ Vue.component("tomasolu-view", {
             this.$forceUpdate();
         },
         last_cycle: function () {
-            this.popup_alert("not implemented", "danger");
+            let togo = this.fpu.cycle_passed - this.forward_step;
+            if (togo < 0) {
+                this.popup_alert("can't go back to the time before FPU created", "danger");
+                return;
+            }
+            let new_fpu = new FPU();
+            _.each(this.fpu.instruction_list, function (ins) {
+                new_fpu.add_instruction(new Instruction(ins.op, ins.rs, ins.rt, ins.rd));
+            });
+            this.fpu = new_fpu;
+            this.fpu.cycle_pass(togo);
+            this.$forceUpdate();
         },
         range: function (begin, stop, step=1) {
             let ret = [];
@@ -47,10 +58,15 @@ Vue.component("tomasolu-view", {
             _.each(this.example_instructions_list[idx], _.bind(function (ins) {
                 this.fpu.add_instruction(new Instruction(ins.op, ins.rs, ins.rt, ins.rd));
             }, this));
-            this.loading = false;
         },
         popup_alert: function(msg, type="default", strong="") {
             this.alert_list.push({type: type, strong: strong, msg: msg});
+        },
+        valid_or_default: function(val, _default) {
+            if (val === undefined || val === null)
+                return _default;
+            else
+                return val;
         }
     }
     ,

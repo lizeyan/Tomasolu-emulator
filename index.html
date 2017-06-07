@@ -151,9 +151,9 @@
                             <th>写回结果</th>
                         </tr>
                         <tr v-for="instruction in fpu.instruction_list">
-                            <td>{{ instruction.status_change_time.issue_time }}</td>
-                            <td>{{ instruction.status_change_time.finish_time }}</td>
-                            <td>{{ instruction.status_change_time.write_time }}</td>
+                            <td>{{ valid_or_default(instruction.status_change_time.issue_time, "unknown") }}</td>
+                            <td>{{ valid_or_default(instruction.status_change_time.finish_time, "unknown") }}</td>
+                            <td>{{ valid_or_default(instruction.status_change_time.write_time, "unknown") }}</td>
                         </tr>
                         </tbody>
                     </table>
@@ -313,38 +313,6 @@
                     </table>
                 </div>
 
-            </div>
-
-            <!-- Normal Register File -->
-            <div class="row">
-                <div class="col-md-12 flex-wrap">
-                    <label class="align-center text-center">通用寄存器</label>
-                    <table class="table table-responsive table-bordered">
-                        <colgroup>
-                            <col v-for="idx in 17" span="1" style="width: 5%;">
-                        </colgroup>
-                        <tbody>
-                        <tr>
-                            <th>地址</th>
-                            <td class="text-center" v-for="idx in 16"
-                                :id="'te-view-display-normal-register-address-'+idx+'-td'">R{{ idx }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>内容</th>
-                            <td class="text-center" v-for="idx in 16" :key="idx" v-if="fpu.register_file.read('R' + idx) !== null">{{ fpu.register_file.data['R' + idx].value
-                                }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>表达式</th>
-                            <td class="text-center" v-for="idx in 16" :key="idx" v-if="fpu.register_file.read('R' + idx) !== null">{{ fpu.register_file.data['R' + idx].expression
-                                }}
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
             </div>
         </div>
     </div>
