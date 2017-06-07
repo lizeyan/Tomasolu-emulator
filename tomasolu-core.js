@@ -20,7 +20,7 @@ const operations = {
     "addd": {
         description: "floating point rs + rt => rd",
         exec_time: 2,
-        write_back_address: function (ins, context) {
+        write_back_address: function (ins) {
             return ins.rd;
         },
         exec_result: function (a, b) {
@@ -30,7 +30,7 @@ const operations = {
     "subd": {
         description: "floating point rs - rt => rd",
         exec_time: 2,
-        write_back_address: function (ins, context) {
+        write_back_address: function (ins) {
             return ins.rd;
         },
         exec_result: function (a, b) {
@@ -40,7 +40,7 @@ const operations = {
     "multd": {
         description: "floating point rs * rt => rd",
         exec_time: 10,
-        write_back_address: function (ins, context) {
+        write_back_address: function (ins) {
             return ins.rd;
         },
         exec_result: function (a, b) {
@@ -50,7 +50,7 @@ const operations = {
     "divd": {
         description: "floating point rs / rt => rd",
         exec_time: 40,
-        write_back_address: function (ins, context) {
+        write_back_address: function (ins) {
             return ins.rd;
         },
         exec_result: function (a, b) {
@@ -122,15 +122,9 @@ class Memory {
     }
 
     read(address, offset=0) {
-        let local_address = address;
-        let local_offset = offset;
+        let local_address = Number.parseInt(address);
 
-       
-        local_address = Number.parseInt(address);
-        local_offset = Number.parseInt("" + offset);
-
-
-        local_address += local_offset;
+        local_address += Number.parseInt("" + offset);
         local_address = Math.floor(local_address);
 
         // console.log("address String", address);
@@ -150,8 +144,7 @@ class Memory {
     }
 
     toString() {
-        let jsonMemory = JSON.stringify(this.data);
-        return jsonMemory;
+        return JSON.stringify(this.data);
     }
 }
 
@@ -175,17 +168,11 @@ class MemoryBuffer {
     is_free (ins) {
         if(ins.op === "ld")
 		{
-            if(this.load_buffer_used < this.load_buffer_size)
-                return true;
-            else
-                return false;
+            return this.load_buffer_used < this.load_buffer_size;
         }
 		else if(ins.op === "st")
 		{
-            if(this.store_buffer_used < this.store_buffer_size)
-                return true;
-            else
-                return false;
+            return this.store_buffer_used < this.store_buffer_size;
         }
     }
     // issue一条load或者store指令，ins是Instruction类型
@@ -205,7 +192,7 @@ class MemoryBuffer {
                 this.store_buffer_used += 1;
         }
 
-        var this_content = new MemoryBufferContent(ins);
+        let this_content = new MemoryBufferContent(ins);
         this_content.issue_time = current_cycle;
         if (ins.op === "ld") // Load
         {
@@ -262,12 +249,13 @@ class MemoryBuffer {
      */
     work (current_cycle) {
         // console.log("work -- load buffer[2] " + this.load_buffer[2]);
-        // 判断是否开始执行，设置开始执行时间
+        let formerInsAllRunning;
+// 判断是否开始执行，设置开始执行时间
         for(let i = 0; i < this.load_buffer_size; ++i)
         {             
             if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].satisfy && !this.load_buffer[i].running)
             {
-                var formerInsAllRunning = true;
+                formerInsAllRunning = true;
 
                 for(let j = 0; j < this.load_buffer_size; ++j)
                 {
@@ -308,7 +296,7 @@ class MemoryBuffer {
         {
             if(this.store_buffer[i] !== null && this.store_buffer[i].busy && !this.store_buffer[i].running)
             {
-                var formerInsAllRunning = true;
+                formerInsAllRunning = true;
               
                 for(let j = 0; j < this.load_buffer_size; ++j)
                 {
@@ -437,10 +425,9 @@ class MemoryBuffer {
     }
 
     toString() {
-        var jsonLoadBuffer = JSON.stringify(this.load_buffer);
-        var jsonStoreBuffer = JSON.stringify(this.store_buffer);
-        var rt = "\nLoad Buffer:\n" + jsonLoadBuffer + "\nStore Buffer:\n" + jsonStoreBuffer;
-        return rt;
+        let jsonLoadBuffer = JSON.stringify(this.load_buffer);
+        let jsonStoreBuffer = JSON.stringify(this.store_buffer);
+        return "\nLoad Buffer:\n" + jsonLoadBuffer + "\nStore Buffer:\n" + jsonStoreBuffer;
     }
 }
 
@@ -470,17 +457,11 @@ class ReservationStation {
     {
         if(ins.op === "addd" || ins.op === "subd")
         {
-            if(this.add_used < this.add_size)
-                return true;
-            else
-                return false;
+            return this.add_used < this.add_size;
         }
         else if(ins.op === "multd" || ins.op === "divd")
         {
-            if(this.multi_used < this.multi_size)
-                return true;
-            else
-                return false;
+            return this.multi_used < this.multi_size;
         }
     }
     //发射一条指令
@@ -509,7 +490,7 @@ class ReservationStation {
         else
             this.multi_used += 1;
         // 为这个待issue的类构建一个新的保留站项目
-        var this_content = new ReservationContent(ins.op, ins.rs, ins);
+        let this_content = new ReservationContent(ins.op, ins.rs, ins);
         // 检测rs寄存器是否可用
         if(this.fpu.register_file.get_expression(ins.rs) === ""){
             this_content.vj = this.fpu.register_file.read(ins.rs);
@@ -523,10 +504,7 @@ class ReservationStation {
             this_content.qk = this.fpu.register_file.get_expression(ins.rt);
         }
         // 判断是否两个寄存器都可用，设置satisfy
-        if(this_content.qj === "" && this_content.qk === "")
-            this_content.satisfy = true;
-        else
-            this_content.satisfy = false;
+        this_content.satisfy = this_content.qj === "" && this_content.qk === "";
         // 将这个保留站项目加入列表中
         let rank = 0;
         if (type === 1)
@@ -587,10 +565,10 @@ class ReservationStation {
             //更新vj和vk
             if(this.add_reservation_stations[i].vj === "")
                 if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rs) === "")
-                    this.add_reservation_stations[i].vj = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rs)
+                    this.add_reservation_stations[i].vj = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rs);
             if(this.add_reservation_stations[i].vk === "")
                 if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rt) === "")
-                    this.add_reservation_stations[i].vk = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rt)
+                    this.add_reservation_stations[i].vk = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rt);
             //更新所有满足条件的保留站项目
             if(this.add_reservation_stations[i].vj !== "" && this.add_reservation_stations[i].vk !== "")
                 this.add_reservation_stations[i].satisfy = true;
@@ -601,10 +579,10 @@ class ReservationStation {
             //更新vj和vk
             if(this.multi_reservation_stations[i].vj === "")
                 if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rs) === "")
-                    this.multi_reservation_stations[i].vj = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rs)
+                    this.multi_reservation_stations[i].vj = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rs);
             if(this.multi_reservation_stations[i].vk === "")
                 if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rt) === "")
-                    this.multi_reservation_stations[i].vk = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rt)
+                    this.multi_reservation_stations[i].vk = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rt);
             //更新所有满足条件的保留站项目
             if(this.multi_reservation_stations[i].vj !== "" && this.multi_reservation_stations[i].vk !== "")
                 this.multi_reservation_stations[i].satisfy = true;
@@ -877,7 +855,7 @@ $(function () {
             fpu.add_instruction(new Instruction("ld", "F6", "+34", ""));
             fpu.add_instruction(new Instruction("ld", "F2", "+45", ""));
             fpu.add_instruction(new Instruction("ld", "F10", "+5", ""));
-            fpu.add_instruction(new Instruction("addd", "F0", "F6", "F2"));
+            fpu.add_instruction(new Instruction("addd", "F1", "F6", "F2"));
             fpu.add_instruction(new Instruction("st", "F10", "+1", ""));
             fpu.add_instruction(new Instruction("st", "F2", "+1", ""));
 
@@ -907,9 +885,39 @@ $(function () {
             
         },
         function () {
+            let fpu = new FPU();
+            fpu.add_instruction(new Instruction("ld", "F6", "+34", ""));
+            fpu.add_instruction(new Instruction("ld", "F1", "+45", ""));
+            fpu.add_instruction(new Instruction("ld", "F10", "+5", ""));
+            fpu.add_instruction(new Instruction("addd", "F1", "F6", "F2"));
+            fpu.add_instruction(new Instruction("divd", "F10", "F1", "F4"));
+            fpu.add_instruction(new Instruction("st", "F4", "+2", ""));
+            fpu.add_instruction(new Instruction("st", "F10", "+1", ""));
+            fpu.add_instruction(new Instruction("st", "F2", "+1", ""));
+
+            let terminated = false;
+            for (let i = 0; i < 200; ++i) {
+                fpu.single_cycle_pass();
+
+                if (fpu.num_unfinished() === 0) {
+                    terminated = true;
+                    break;
+                }
+            }
+            if (!terminated)
+            {
+                console.log("next to issue:", fpu.next_to_issue);
+                console.log("next inst to issue:", fpu.instruction_list[fpu.next_to_issue]);
+                console.log("memory buffer ", fpu.memory_buffer.toString());
+                console.log("registers\n", fpu.register_file.toString());
+                console.log("memory\n", fpu.memory.toString());
+                throw "unterminated sequence";
+            }
+
+            assert(fpu.memory.read(1) === 79, "wrong result");
+            assert(fpu.memory.read(2) === 1/9, "wrong result");
 
         }
     ];
-    // apply_test(test_function_list, alert);
-    // apply_test(test_function_list);
+    apply_test(test_function_list);
 });
