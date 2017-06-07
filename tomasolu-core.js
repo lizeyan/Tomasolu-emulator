@@ -87,6 +87,8 @@ class ReservationContent{
         this.ins = ins;
         this.op = op;
         this.rs = rs;
+        this.rt = ins.rt;
+        this.rd = ins.rd;
         this.vj = vj;
         this.vk = vk;
         this.qj = qj;
