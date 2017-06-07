@@ -300,6 +300,7 @@ class MemoryBuffer {
                 {
                     this.load_buffer[i].begin_time = current_cycle;
                     this.load_buffer[i].running = true;
+                    this.load_buffer[i].ins.status = "load";
                 }
             }
         }
@@ -340,6 +341,7 @@ class MemoryBuffer {
                     {
                         this.store_buffer[i].begin_time = current_cycle;
                         this.store_buffer[i].running = true;
+                        this.store_buffer[i].ins.status = "store";
                     }
                     else  //如果运行条件（之前）尚未满足，检查一下现在是否满足
                     {
@@ -348,6 +350,7 @@ class MemoryBuffer {
                             this.store_buffer[i].satisfy = true;
                             this.store_buffer[i].begin_time = current_cycle;
                             this.store_buffer[i].running = true;
+                            this.store_buffer[i].ins.status = "store";
                         }
                     }
                 }
@@ -364,6 +367,7 @@ class MemoryBuffer {
                     this.load_buffer[i].data = this.fpu.memory.read(this.load_buffer[i].A);
                     console.log("load buffer execute", this.load_buffer[i]);
                     this.load_buffer[i].ins.status_change_time["finish_time"] = current_cycle;
+                    this.load_buffer[i].ins.status = "load_finish";
                 }
             }
 
@@ -376,6 +380,7 @@ class MemoryBuffer {
                     this.store_buffer[i].data = this.fpu.register_file.read(this.store_buffer[i].rs);
                     console.log("store buffer execute", this.store_buffer[i]);
                     this.store_buffer[i].ins.status_change_time["finish_time"] = current_cycle;
+                    this.store_buffer[i].ins.status = "store_finish";
                 }
             }
         
@@ -404,6 +409,7 @@ class MemoryBuffer {
                     this.load_buffer_used -= 1;
                     //写入这条指令的写回时间
                     this.load_buffer[i].ins.status_change_time["write_time"] = current_cycle;
+                    this.load_buffer[i].ins.status = "finish";
                     this.load_buffer[i] = null;
                 }
             }
@@ -421,6 +427,7 @@ class MemoryBuffer {
                     this.store_buffer_used -= 1;
                     //写入这条指令的写回时间
                     this.store_buffer[i].ins.status_change_time["write_time"] = current_cycle;
+                    this.store_buffer[i].ins.status = "finish";
                     this.store_buffer[i] = null;
                 }
             }
