@@ -91,8 +91,8 @@
 
         <div class="te-view-display-div container-fluid">
             <div class="row">
-                <div class="col-md-4 te-view-display-instruction-list flex-wrap">
-                    <label class="text-center align-center">
+                <div class="col-md-4 te-view-display-instruction-list flex-wrap panel panel-default">
+                    <label class="text-center align-center panel-heading">
                         指令队列
                     </label>
                     <div class="btn-group" role="group" aria-label="...">
@@ -100,7 +100,7 @@
                         </button>
                         <button class="btn btn-warning" @click="pop_empty_instruction" :disabled="!loading || fpu.instruction_list.length <= 0">pop</button>
                     </div>
-                    <table class="table table-bordered table-responsive">
+                    <table class="table table-bordered table-responsive panel-body">
                         <colgroup>
                             <col span="1" style="width: 40%;">
                             <col span="1" style="width: 20%;">
@@ -134,11 +134,11 @@
                     </table>
                 </div>
 
-                <div class="col-md-3 te-view-display-history-list flex-wrap">
-                    <label class="text-center align-center">
+                <div class="col-md-3 te-view-display-history-list flex-wrap panel panel-default">
+                    <label class="text-center align-center panel-heading">
                         运行结果
                     </label>
-                    <table class="table table-bordered table-responsive">
+                    <table class="table table-bordered table-responsive panel-body">
                         <colgroup>
                             <col span="1" style="width: 33%;">
                             <col span="1" style="width: 33%;">
