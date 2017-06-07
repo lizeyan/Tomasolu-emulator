@@ -852,6 +852,7 @@ class FPU {
 
 const test_instructions_list = [
     [
+        //测试了load和store实现的正确性
         new Instruction("ld", "F6", "+34", ""),
         new Instruction("ld", "F2", "+45", ""),
         new Instruction("ld", "F10", "+5", ""),
@@ -860,8 +861,10 @@ const test_instructions_list = [
         new Instruction("st", "F2", "+1", ""),
     ],
     [
+        //测试了四种浮点操作的正确性
         new Instruction("ld", "F6", "+34", ""),
         new Instruction("ld", "F2", "+45", ""),
+        new Instruction("ld", "F4", "+2", ""),
         new Instruction("multd", "F2", "F4", "F1"),
         new Instruction("subd", "F6", "F2", "F8"),
         new Instruction("divd", "F1", "F6", "F10"),
@@ -869,14 +872,12 @@ const test_instructions_list = [
         new Instruction("st", "F10", "19", "")
     ],
     [
-        new Instruction("ld", "F6", "+34", ""),
-        new Instruction("ld", "F1", "+45", ""),
-        new Instruction("ld", "F10", "+5", ""),
-        new Instruction("addd", "F1", "F6", "F2"),
-        new Instruction("divd", "F10", "F1", "F4"),
-        new Instruction("st", "F4", "+2", ""),
-        new Instruction("st", "F10", "+1", ""),
-        new Instruction("st", "F2", "+1", ""),
+        //写后读
+        new Instruction("ld", "F1", "+12", ""),
+        new Instruction("st", "F1", "+1", ""),
+        new Instruction("ld", "F2", "+1", ""),
+        new Instruction("multd", "F1", "F2", "F3"),
+        new Instruction("addd", "F3", "F3", "F3"),
     ],
 ];
 
@@ -887,58 +888,73 @@ function load_instructions(fpu, instruction_list) {
     });
 }
 
+function check_terminable(fpu)
+{
+    let terminated = false;
+    for (let i = 0; i < 10000; ++i) {
+        fpu.single_cycle_pass();
+
+        if (fpu.num_unfinished() === 0) {
+            terminated = true;
+            break;
+        }
+    }
+    if (!terminated)
+    {
+        console.log("next to issue:", fpu.next_to_issue);
+        console.log("next inst to issue:", fpu.instruction_list[fpu.next_to_issue]);
+        console.log("memory buffer ", fpu.memory_buffer.toString());
+        console.log("registers\n", fpu.register_file.toString());
+        console.log("memory\n", fpu.memory.toString());
+        throw "unterminated sequence";
+    }
+}
+
+function assert_register_value(fpu, address, value) {
+    let real = fpu.register_file.read(address);
+    assert(real === value, "read value in register " + address + ":" + real + ", expected:" + value);
+}
+function assert_memory_value(fpu, address, value) {
+    let real = fpu.memory.read(address);
+    assert(real === value, "read value in memory " + address + ":" + real + ", expected:" + value);
+}
+
 // test
 $(function () {
     let test_function_list = [
         function () {
             let fpu = new FPU();
             load_instructions(fpu, test_instructions_list[0]);
-            let terminated = false;
-            for (let i = 0; i < 70; ++i) {
-                fpu.single_cycle_pass();
+            check_terminable(fpu);
+            assert_register_value(fpu, "F6", 34);
+            assert_register_value(fpu, "F10", 5);
+            assert_register_value(fpu, "F2", 34);
+            assert_memory_value(fpu, 1, 34);
+            assert_memory_value(fpu, 2, 2);
+            assert_memory_value(fpu, 45, 45);
+            assert_memory_value(fpu, 34, 34);
 
-                if (fpu.num_unfinished() === 0) {
-                    terminated = true;
-                    break;
-                }
-            }
-            if (!terminated)
-            {
-                console.log("\n\n你们真是逆天狂神！！！\n\n\n");
-                console.log("next to issue:", fpu.next_to_issue);
-                console.log("next inst to issue:", fpu.instruction_list[fpu.next_to_issue]);
-                console.log("memory buffer ", fpu.memory_buffer.toString());
-                console.log("registers\n", fpu.register_file.toString());
-                console.log("memory\n", fpu.memory.toString());
-                throw "unterminated sequence";
-            }
-            
+        },
+        function () {
+            let fpu = new FPU();
+            load_instructions(fpu, test_instructions_list[1]);
+            check_terminable(fpu);
+            assert_register_value(fpu, "F6", 34);
+            assert_register_value(fpu, "F4", 2);
+            assert_register_value(fpu, "F2", 45);
+            assert_register_value(fpu, "F1", 90);
+            assert_register_value(fpu, "F8", -11);
+            assert_register_value(fpu, "F10", 90 / 34);
+            assert_register_value(fpu, "F6", 34);
+            assert_memory_value(fpu, 19, 90 / 34);
+
         },
         function () {
             let fpu = new FPU();
             load_instructions(fpu, test_instructions_list[2]);
-
-            let terminated = false;
-            for (let i = 0; i < 200; ++i) {
-                fpu.single_cycle_pass();
-
-                if (fpu.num_unfinished() === 0) {
-                    terminated = true;
-                    break;
-                }
-            }
-            if (!terminated)
-            {
-                console.log("next to issue:", fpu.next_to_issue);
-                console.log("next inst to issue:", fpu.instruction_list[fpu.next_to_issue]);
-                console.log("memory buffer ", fpu.memory_buffer.toString());
-                console.log("registers\n", fpu.register_file.toString());
-                console.log("memory\n", fpu.memory.toString());
-                throw "unterminated sequence";
-            }
-            assert(fpu.memory.read(1) === 79, "wrong result");
-            assert(fpu.memory.read(2) === 1/9, "wrong result");
-
+            check_terminable(fpu);
+            assert_memory_value(fpu, "1", 12);
+            assert_register_value(fpu, "F3", 288);
         }
     ];
     apply_test(test_function_list);
