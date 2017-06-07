@@ -27,7 +27,16 @@ Vue.component("tomasolu-view", {
                     new Instruction("addd", "F8", "F2", "F6"),
                     new Instruction("st", "F10", "19", "")
                 ],
-                [],
+                [
+                    new Instruction("ld", "F6", "+34", ""),
+                    new Instruction("ld", "F1", "+45", ""),
+                    new Instruction("ld", "F10", "+5", ""),
+                    new Instruction("addd", "F1", "F6", "F2"),
+                    new Instruction("divd", "F10", "F1", "F4"),
+                    new Instruction("st", "F4", "+2", ""),
+                    new Instruction("st", "F10", "+1", ""),
+                    new Instruction("st", "F2", "+1", ""),
+                ],
             ],
             forward_step: 1,
             alert_list: [],

@@ -888,14 +888,14 @@ $(function () {
         },
         function () {
             let fpu = new FPU();
-            fpu.add_instruction(new Instruction("ld", "F6", "+34", ""));
-            fpu.add_instruction(new Instruction("ld", "F1", "+45", ""));
-            fpu.add_instruction(new Instruction("ld", "F10", "+5", ""));
-            fpu.add_instruction(new Instruction("addd", "F1", "F6", "F2"));
+            fpu.add_instruction(new Instruction("ld", "F6", "+34", "")    );
+            fpu.add_instruction(new Instruction("ld", "F1", "+45", "")    );
+            fpu.add_instruction(new Instruction("ld", "F10", "+5", "")    );
+            fpu.add_instruction(new Instruction("addd", "F1", "F6", "F2") );
             fpu.add_instruction(new Instruction("divd", "F10", "F1", "F4"));
-            fpu.add_instruction(new Instruction("st", "F4", "+2", ""));
-            fpu.add_instruction(new Instruction("st", "F10", "+1", ""));
-            fpu.add_instruction(new Instruction("st", "F2", "+1", ""));
+            fpu.add_instruction(new Instruction("st", "F4", "+2", "")     );
+            fpu.add_instruction(new Instruction("st", "F10", "+1", "")    );
+            fpu.add_instruction(new Instruction("st", "F2", "+1", "")     );
 
             let terminated = false;
             for (let i = 0; i < 200; ++i) {
