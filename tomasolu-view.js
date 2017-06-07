@@ -9,11 +9,31 @@ Vue.component("tomasolu-view", {
             fpu: new FPU(),
             memory_query_addresses: addresses,
             loading: true,
+            example_instructions_list: [
+                [
+                    new Instruction("ld", "F6", "+34", ""),
+                    new Instruction("ld", "F2", "+45", ""),
+                    new Instruction("ld", "F10", "+5", ""),
+                    new Instruction("addd", "F0", "F6", "F2"),
+                    new Instruction("st", "F10", "+1", ""),
+                    new Instruction("st", "F0", "+1", ""),
+                ],
+                [
+                    new Instruction("ld", "F6", "+34", ""),
+                    new Instruction("ld", "F2", "+45", ""),
+                    new Instruction("multd", "F2", "F4", "F0"),
+                    new Instruction("subd", "F6", "F2", "F8"),
+                    new Instruction("divd", "F0", "F6", "F10"),
+                    new Instruction("addd", "F8", "F2", "F6"),
+                ],
+                [],
+            ],
+            forward_step: 1,
         };
     },
     methods: {
         next_cycle: function () {
-            this.fpu.single_cycle_pass();
+            this.fpu.cycle_pass(this.forward_step);
             this.$forceUpdate();
         },
         last_cycle: function () {
@@ -39,6 +59,13 @@ Vue.component("tomasolu-view", {
                 return;
             this.fpu.instruction_list.pop();
         },
+        load_example_instructions: function (idx) {
+            this.initialize();
+            _.each(this.example_instructions_list[idx], _.bind(function (ins) {
+                this.fpu.add_instruction(new Instruction(ins.op, ins.rs, ins.rt, ins.rd));
+            }, this));
+            this.loading = false;
+        }
     },
     computed: {
     }

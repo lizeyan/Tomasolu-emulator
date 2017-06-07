@@ -799,6 +799,7 @@ class FPU {
     }
 
     add_instruction(ins) {
+        ins.status_change_time = {};
         this.instruction_list.push(ins);
         ins.status = "queue";
     }

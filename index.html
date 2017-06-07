@@ -50,7 +50,7 @@
                             </li>
                             <li>
                                 <button class="btn btn-success navbar-btn" :disabled="!loading"
-                                        @click=" loading=false;">Load Instructions
+                                        @click=" loading=false;">Start
                                 </button>
                             </li>
                             <li>
@@ -63,12 +63,22 @@
                                     Cycle
                                 </button>
                             </li>
-                            <li>
-                                <button class="btn btn-danger navbar-btn" onclick="window.close();">Exit</button>
-                            </li>
-                            <li>
-                                <button class="btn btn-info navbar-btn" onclick="window.location.reload();">Restart
-                                </button>
+                        </ul>
+
+                        <form class="navbar-form navbar-left">
+                            <div class="form-group">
+                                <label>Forward Step:</label><input type="number" class="form-control" title="Forward Step" v-model="forward_step">
+                            </div>
+                            <div class="form-group">
+                                <label>Current Cycle</label><input type="number" class="form-control" title="Forward Step" v-model="fpu.cycle_passed" readonly>
+                            </div>
+                        </form>
+                        <ul class="nav navbar-nav navbar-right" v-if="loading">
+                            <li class="dropdown">
+                                <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Load Example <span class="caret"></span></a>
+                                <ul class="dropdown-menu">
+                                    <li v-for="idx in range(0, example_instructions_list.length)"><a class="btn" @click="load_example_instructions(idx)">Load example{{ idx + 1}}</a></li>
+                                </ul>
                             </li>
                         </ul>
                     </div>
@@ -137,16 +147,10 @@
                             <th>执行完毕</th>
                             <th>写回结果</th>
                         </tr>
-                        <tr v-for="instruction in fpu.instruction_list" v-if="instruction in fpu.instruction_status_change_time">
-                            <td>{{ fpu.instruction_status_change_time[instruction].issue_time }}</td>
-                            <td>{{ fpu.instruction_status_change_time[instruction].finish_time }}</td>
-                            <td>{{ fpu.instruction_status_change_time[instruction].write_time }}</td>
-                            <td>{{ instruction }}</td>
-                        </tr>
-                        <tr v-else>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                        <tr v-for="instruction in fpu.instruction_list">
+                            <td>{{ instruction.status_change_time.issue_time }}</td>
+                            <td>{{ instruction.status_change_time.finish_time }}</td>
+                            <td>{{ instruction.status_change_time.write_time }}</td>
                         </tr>
                         </tbody>
                     </table>
