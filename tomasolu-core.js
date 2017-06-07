@@ -68,7 +68,7 @@ class Instruction {
         this.rs = rs;
         this.rt = rt;
         this.rd = rd;
-        this.status = ""; //指令状态: queue, issue, exec, exec_finished, finished
+        this.status = ""; //指令状态: queue, issue, exec, exec_finish, finish
         this.status_change_time = {}; // 指令的运行状态的三个时间，发射指令时间(issue_time)，执行完毕时间(finish_time)，写回结果时间(write_time)
         this.operation = operations[op];
     }
@@ -681,7 +681,7 @@ class ReservationStation {
                         this.add_compute_work[j] = -1;
                 //写入这条指令的结束时间
                 this.add_reservation_stations[i].ins.status_change_time["finish_time"] = current_cycle;
-                this.add_reservation_stations[i].ins.status = "exec_finished";
+                this.add_reservation_stations[i].ins.status = "exec_finish";
             }
         }
 
@@ -700,7 +700,7 @@ class ReservationStation {
                         this.multi_compute_work[j] = -1;
                 //写入这条指令的结束时间
                 this.multi_reservation_stations[i].ins.status_change_time["finish_time"] = current_cycle;
-                this.multi_reservation_stations[i].ins.status = "exec_finished";
+                this.multi_reservation_stations[i].ins.status = "exec_finish";
             }
         }
     }
@@ -727,7 +727,7 @@ class ReservationStation {
                 }
                 //写入这条指令的写回时间
                 this.add_reservation_stations[i].ins.status_change_time["write_time"] = current_cycle;
-                this.add_reservation_stations[i].ins.status = "finished";
+                this.add_reservation_stations[i].ins.status = "finish";
                 this.add_reservation_stations[i] = null;
             }
         }
@@ -748,7 +748,7 @@ class ReservationStation {
                 }
                 //写入这条指令的写回时间
                 this.multi_reservation_stations[i].ins.status_change_time["write_time"] = current_cycle;
-                this.multi_reservation_stations[i].ins.status = "finished";
+                this.multi_reservation_stations[i].ins.status = "finish";
                 this.multi_reservation_stations[i] = null;
             }
         }
@@ -860,7 +860,7 @@ class FPU {
     num_unfinished () {
         // return the number of unfinished instructions
         return _.defaults(_.countBy(this.instruction_list, function (ins) {
-            return ins.status !== "finished";
+            return ins.status !== "finish";
         }), {true: 0, false: 0}).true;
     }
 
