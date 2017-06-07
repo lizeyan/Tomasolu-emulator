@@ -906,5 +906,5 @@ $(function () {
         }
     ];
     // apply_test(test_function_list, alert);
-    apply_test(test_function_list);
+    // apply_test(test_function_list);
 });
