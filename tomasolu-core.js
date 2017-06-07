@@ -510,17 +510,17 @@ class ReservationStation {
             this.multi_used += 1;
         // 为这个待issue的类构建一个新的保留站项目
         var this_content = new ReservationContent(ins.op, ins.rs, ins);
+        // 检测rs寄存器是否可用
+        if(this.fpu.register_file.get_expression(ins.rs) === ""){
+            this_content.vj = this.fpu.register_file.read(ins.rs);
+        }else{
+            this_content.qj = this.fpu.register_file.get_expression(ins.rs);
+        }
         // 检测rt寄存器是否可用
         if(this.fpu.register_file.get_expression(ins.rt) === ""){
-            this_content.vj = this.fpu.register_file.read(ins.rt);
+            this_content.vk = this.fpu.register_file.read(ins.rt)
         }else{
-            this_content.qj = this.fpu.register_file.get_expression(ins.rt);
-        }
-        // 检测rd寄存器是否可用
-        if(this.fpu.register_file.get_expression(ins.rd) === ""){
-            this_content.vk = this.fpu.register_file.read(ins.rd)
-        }else{
-            this_content.qk = this.fpu.register_file.get_expression(ins.rd);
+            this_content.qk = this.fpu.register_file.get_expression(ins.rt);
         }
         // 判断是否两个寄存器都可用，设置satisfy
         if(this_content.qj === "" && this_content.qk === "")
@@ -550,7 +550,7 @@ class ReservationStation {
         this_content.rank = rank;
         // 设置写入寄存器的表达式
         this_content.name = ins.op + this_content.rank.toString();
-        this.fpu.register_file.set_expression(ins.rs, this_content.name);
+        this.fpu.register_file.set_expression(ins.rd, this_content.name);
         // 如果条件满足，那么让其开始运行
         if(this_content.satisfy){
             if(type === 1){
@@ -586,11 +586,11 @@ class ReservationStation {
             if(this.add_reservation_stations[i] === null || this.add_reservation_stations[i].satisfy) continue;
             //更新vj和vk
             if(this.add_reservation_stations[i].vj === "")
-                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rt) === "")
-                    this.add_reservation_stations[i].vj = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rt)
+                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rs) === "")
+                    this.add_reservation_stations[i].vj = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rs)
             if(this.add_reservation_stations[i].vk === "")
-                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rd) === "")
-                    this.add_reservation_stations[i].vk = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rd)
+                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rt) === "")
+                    this.add_reservation_stations[i].vk = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rt)
             //更新所有满足条件的保留站项目
             if(this.add_reservation_stations[i].vj !== "" && this.add_reservation_stations[i].vk !== "")
                 this.add_reservation_stations[i].satisfy = true;
@@ -600,11 +600,11 @@ class ReservationStation {
             if(this.multi_reservation_stations[i] === null || this.multi_reservation_stations[i].satisfy) continue;
             //更新vj和vk
             if(this.multi_reservation_stations[i].vj === "")
-                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rt) === "")
-                    this.multi_reservation_stations[i].vj = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rt)
+                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rs) === "")
+                    this.multi_reservation_stations[i].vj = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rs)
             if(this.multi_reservation_stations[i].vk === "")
-                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rd) === "")
-                    this.multi_reservation_stations[i].vk = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rd)
+                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rt) === "")
+                    this.multi_reservation_stations[i].vk = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rt)
             //更新所有满足条件的保留站项目
             if(this.multi_reservation_stations[i].vj !== "" && this.multi_reservation_stations[i].vk !== "")
                 this.multi_reservation_stations[i].satisfy = true;
@@ -718,12 +718,12 @@ class ReservationStation {
             if(this.add_reservation_stations[i].compute_time === operations[this.add_reservation_stations[i].op].exec_time)
             {
                 // 如果要写入的寄存器的名称和这个保留站项的名字一致，就写入
-                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].rs) === this.add_reservation_stations[i].name)
+                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].rd) === this.add_reservation_stations[i].name)
                 {
-                    this.fpu.register_file.write(this.add_reservation_stations[i].rs, this.add_reservation_stations[i].ans);
+                    this.fpu.register_file.write(this.add_reservation_stations[i].rd, this.add_reservation_stations[i].ans);
                     //已写回的表达式为空
-                    this.fpu.register_file.set_expression(this.add_reservation_stations[i].rs, "");
-                    console.log("add writeback rs : ", this.add_reservation_stations[i].rs)
+                    this.fpu.register_file.set_expression(this.add_reservation_stations[i].rd, "");
+                    console.log("add writeback rd : ", this.add_reservation_stations[i].rd)
                 }
                 //写入这条指令的写回时间
                 this.add_reservation_stations[i].ins.status_change_time["write_time"] = current_cycle;
@@ -740,11 +740,11 @@ class ReservationStation {
             if(this.multi_reservation_stations[i].compute_time === operations[this.multi_reservation_stations[i].op].exec_time)
             {
                 // 如果要写入的寄存器的名称和这个保留站项的名字一致，就写入
-                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].rs) === this.multi_reservation_stations[i].name)
+                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].rd) === this.multi_reservation_stations[i].name)
                 {
-                    this.fpu.register_file.write(this.multi_reservation_stations[i].rs, this.multi_reservation_stations[i].ans);
+                    this.fpu.register_file.write(this.multi_reservation_stations[i].rd, this.multi_reservation_stations[i].ans);
                     //已写回的表达式为空
-                    this.fpu.register_file.set_expression(this.multi_reservation_stations[i].rs, "");
+                    this.fpu.register_file.set_expression(this.multi_reservation_stations[i].rd, "");
                 }
                 //写入这条指令的写回时间
                 this.multi_reservation_stations[i].ins.status_change_time["write_time"] = current_cycle;
