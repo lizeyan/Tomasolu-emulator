@@ -67,10 +67,10 @@
 
                         <form class="navbar-form navbar-left">
                             <div class="form-group">
-                                <label>Forward Step:</label><input type="number" class="form-control" title="Forward Step" v-model="forward_step">
+                                <label>Forward Step:</label><input type="number" class="form-control" title="Forward Step" v-model="forward_step" min="1" max="999">
                             </div>
                             <div class="form-group">
-                                <label>Current Cycle</label><input type="number" class="form-control" title="Forward Step" v-model="fpu.cycle_passed" readonly>
+                                <label>Current Cycle</label><input type="number" class="form-control" title="Forward Step" v-model="fpu.cycle_passed" readonly min="0" max="99999">
                             </div>
                         </form>
                         <ul class="nav navbar-nav navbar-right" v-if="loading">
@@ -83,13 +83,16 @@
                         </ul>
                     </div>
                 </div>
+                <div class="te-view-alert-box">
+                    <alert-banning v-for="info in alert_list" :type="info.type" :strong="info.strong" :msg="info.msg" :key="info"></alert-banning>
+                </div>
             </nav>
         </div>
 
         <div class="te-view-display-div container-fluid">
             <div class="row">
-                <div class="col-md-4 te-view-display-instruction-list flex-wrap">
-                    <label class="text-center align-center">
+                <div class="col-md-4 te-view-display-instruction-list flex-wrap panel panel-default">
+                    <label class="text-center align-center panel-heading">
                         指令队列
                     </label>
                     <div class="btn-group" role="group" aria-label="...">
@@ -97,7 +100,7 @@
                         </button>
                         <button class="btn btn-warning" @click="pop_empty_instruction" :disabled="!loading || fpu.instruction_list.length <= 0">pop</button>
                     </div>
-                    <table class="table table-bordered table-responsive">
+                    <table class="table table-bordered table-responsive panel-body">
                         <colgroup>
                             <col span="1" style="width: 40%;">
                             <col span="1" style="width: 20%;">
@@ -131,11 +134,11 @@
                     </table>
                 </div>
 
-                <div class="col-md-3 te-view-display-history-list flex-wrap">
-                    <label class="text-center align-center">
+                <div class="col-md-3 te-view-display-history-list flex-wrap panel panel-default">
+                    <label class="text-center align-center panel-heading">
                         运行结果
                     </label>
-                    <table class="table table-bordered table-responsive">
+                    <table class="table table-bordered table-responsive panel-body">
                         <colgroup>
                             <col span="1" style="width: 33%;">
                             <col span="1" style="width: 33%;">
@@ -332,6 +335,13 @@
                 </div>
             </div>
         </div>
+    </div>
+</template>
+
+<template id="tmplt-alert">
+    <div :class="'alert alert-'+type+' alert-dismissible'" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <strong>{{ strong }}</strong> {{ msg }}
     </div>
 </template>
 

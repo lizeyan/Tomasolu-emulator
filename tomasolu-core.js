@@ -7,7 +7,7 @@ const multi_compute_num = 1;
 
 const operations = {
     "ld": {
-        description: "load Immediate(rs) to Register(rt)",
+        description: "load Immediate(rt) to Register(rs)",
         exec_time: 2,
         exec_result: function (ins, context) {
             return context.memory.read(ins.rs);
@@ -137,7 +137,7 @@ class Memory {
         // console.log("address Num", local_address);
 
         if (! (local_address in this.data))
-            return this.write(local_address, 121);
+            return this.write(local_address, local_address);
         else
             return this.data[local_address];
     }
@@ -150,7 +150,7 @@ class Memory {
     }
 
     toString() {
-        var jsonMemory = JSON.stringify(this.data);
+        let jsonMemory = JSON.stringify(this.data);
         return jsonMemory;
     }
 }
@@ -879,7 +879,7 @@ $(function () {
             fpu.add_instruction(new Instruction("ld", "F10", "+5", ""));
             fpu.add_instruction(new Instruction("addd", "F0", "F6", "F2"));
             fpu.add_instruction(new Instruction("st", "F10", "+1", ""));
-            fpu.add_instruction(new Instruction("st", "F0", "+1", ""));
+            fpu.add_instruction(new Instruction("st", "F2", "+1", ""));
 
             // fpu.add_instruction(new Instruction("multd", "F0", "F2", "F6"));
             // fpu.add_instruction(new Instruction("subd", "F8", "F6", "F2"));

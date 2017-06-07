@@ -14,21 +14,23 @@ Vue.component("tomasolu-view", {
                     new Instruction("ld", "F6", "+34", ""),
                     new Instruction("ld", "F2", "+45", ""),
                     new Instruction("ld", "F10", "+5", ""),
-                    new Instruction("addd", "F0", "F6", "F2"),
+                    new Instruction("addd", "F1", "F6", "F2"),
                     new Instruction("st", "F10", "+1", ""),
-                    new Instruction("st", "F0", "+1", ""),
+                    new Instruction("st", "F2", "+1", ""),
                 ],
                 [
                     new Instruction("ld", "F6", "+34", ""),
                     new Instruction("ld", "F2", "+45", ""),
-                    new Instruction("multd", "F2", "F4", "F0"),
+                    new Instruction("multd", "F2", "F4", "F1"),
                     new Instruction("subd", "F6", "F2", "F8"),
-                    new Instruction("divd", "F0", "F6", "F10"),
+                    new Instruction("divd", "F1", "F6", "F10"),
                     new Instruction("addd", "F8", "F2", "F6"),
+                    new Instruction("st", "F10", "19", "")
                 ],
                 [],
             ],
             forward_step: 1,
+            alert_list: [],
         };
     },
     methods: {
@@ -37,7 +39,7 @@ Vue.component("tomasolu-view", {
             this.$forceUpdate();
         },
         last_cycle: function () {
-            alert("last cycle");
+            this.popup_alert("not implemented", "danger");
         },
         range: function (begin, stop, step=1) {
             let ret = [];
@@ -65,10 +67,19 @@ Vue.component("tomasolu-view", {
                 this.fpu.add_instruction(new Instruction(ins.op, ins.rs, ins.rt, ins.rd));
             }, this));
             this.loading = false;
+        },
+        popup_alert: function(msg, type="default", strong="") {
+            this.alert_list.push({type: type, strong: strong, msg: msg});
         }
-    },
+    }
+    ,
     computed: {
     }
+});
+
+Vue.component("alert-banning", {
+    template: $("#tmplt-alert").html(),
+    props: ["type", "strong", "msg"]
 });
 
 let app = new Vue({
