@@ -293,13 +293,19 @@
                         <tbody>
                         <tr>
                             <th>地址</th>
-                            <td class="text-center" v-for="idx in 10"
+                            <td class="text-center" v-for="idx in 16"
                                 :id="'te-view-display-floating-point-register-address-'+idx+'-td'">F{{ idx }}
                             </td>
                         </tr>
                         <tr>
                             <th>内容</th>
-                            <td class="text-center" v-for="idx in 10" :key="idx">{{ fpu.register_file.read('F' + idx)
+                            <td class="text-center" v-for="idx in 16" :key="idx" v-if="fpu.register_file.read('F' + idx) !== null">{{ fpu.register_file.data['F' + idx].value
+                                }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>表达式</th>
+                            <td class="text-center" v-for="idx in 16" :key="idx" v-if="fpu.register_file.read('F' + idx) !== null">{{ fpu.register_file.data['F' + idx].expression
                                 }}
                             </td>
                         </tr>
@@ -326,7 +332,13 @@
                         </tr>
                         <tr>
                             <th>内容</th>
-                            <td class="text-center" v-for="idx in 16" :key="idx">{{ fpu.register_file.read('R' + idx)
+                            <td class="text-center" v-for="idx in 16" :key="idx" v-if="fpu.register_file.read('R' + idx) !== null">{{ fpu.register_file.data['R' + idx].value
+                                }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>表达式</th>
+                            <td class="text-center" v-for="idx in 16" :key="idx" v-if="fpu.register_file.read('R' + idx) !== null">{{ fpu.register_file.data['R' + idx].expression
                                 }}
                             </td>
                         </tr>
