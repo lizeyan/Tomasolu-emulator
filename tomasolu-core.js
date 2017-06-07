@@ -849,22 +849,50 @@ class FPU {
     }
 }
 
+
+const test_instructions_list = [
+    [
+        new Instruction("ld", "F6", "+34", ""),
+        new Instruction("ld", "F2", "+45", ""),
+        new Instruction("ld", "F10", "+5", ""),
+        new Instruction("addd", "F1", "F6", "F2"),
+        new Instruction("st", "F10", "+1", ""),
+        new Instruction("st", "F2", "+1", ""),
+    ],
+    [
+        new Instruction("ld", "F6", "+34", ""),
+        new Instruction("ld", "F2", "+45", ""),
+        new Instruction("multd", "F2", "F4", "F1"),
+        new Instruction("subd", "F6", "F2", "F8"),
+        new Instruction("divd", "F1", "F6", "F10"),
+        new Instruction("addd", "F8", "F2", "F6"),
+        new Instruction("st", "F10", "19", "")
+    ],
+    [
+        new Instruction("ld", "F6", "+34", ""),
+        new Instruction("ld", "F1", "+45", ""),
+        new Instruction("ld", "F10", "+5", ""),
+        new Instruction("addd", "F1", "F6", "F2"),
+        new Instruction("divd", "F10", "F1", "F4"),
+        new Instruction("st", "F4", "+2", ""),
+        new Instruction("st", "F10", "+1", ""),
+        new Instruction("st", "F2", "+1", ""),
+    ],
+];
+
+
+function load_instructions(fpu, instruction_list) {
+    _.each(instruction_list, function (ins) {
+        fpu.add_instruction(new Instruction(ins.op, ins.rs, ins.rt, ins.rd));
+    });
+}
+
 // test
 $(function () {
     let test_function_list = [
         function () {
             let fpu = new FPU();
-            fpu.add_instruction(new Instruction("ld", "F6", "+34", ""));
-            fpu.add_instruction(new Instruction("ld", "F2", "+45", ""));
-            fpu.add_instruction(new Instruction("ld", "F10", "+5", ""));
-            fpu.add_instruction(new Instruction("addd", "F1", "F6", "F2"));
-            fpu.add_instruction(new Instruction("st", "F10", "+1", ""));
-            fpu.add_instruction(new Instruction("st", "F2", "+1", ""));
-
-            // fpu.add_instruction(new Instruction("multd", "F0", "F2", "F6"));
-            // fpu.add_instruction(new Instruction("subd", "F8", "F6", "F2"));
-            // fpu.add_instruction(new Instruction("divd", "F10", "F0", "F6"));
-            // fpu.add_instruction(new Instruction("addd", "F6", "F10", "F2"));
+            load_instructions(fpu, test_instructions_list[0]);
             let terminated = false;
             for (let i = 0; i < 70; ++i) {
                 fpu.single_cycle_pass();
@@ -888,14 +916,7 @@ $(function () {
         },
         function () {
             let fpu = new FPU();
-            fpu.add_instruction(new Instruction("ld", "F6", "+34", "")    );
-            fpu.add_instruction(new Instruction("ld", "F1", "+45", "")    );
-            fpu.add_instruction(new Instruction("ld", "F10", "+5", "")    );
-            fpu.add_instruction(new Instruction("addd", "F1", "F6", "F2") );
-            fpu.add_instruction(new Instruction("divd", "F10", "F1", "F4"));
-            fpu.add_instruction(new Instruction("st", "F4", "+2", "")     );
-            fpu.add_instruction(new Instruction("st", "F10", "+1", "")    );
-            fpu.add_instruction(new Instruction("st", "F2", "+1", "")     );
+            load_instructions(fpu, test_instructions_list[2]);
 
             let terminated = false;
             for (let i = 0; i < 200; ++i) {
@@ -915,7 +936,6 @@ $(function () {
                 console.log("memory\n", fpu.memory.toString());
                 throw "unterminated sequence";
             }
-
             assert(fpu.memory.read(1) === 79, "wrong result");
             assert(fpu.memory.read(2) === 1/9, "wrong result");
 

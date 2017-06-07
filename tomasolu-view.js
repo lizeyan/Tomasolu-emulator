@@ -9,35 +9,7 @@ Vue.component("tomasolu-view", {
             fpu: new FPU(),
             memory_query_addresses: addresses,
             loading: true,
-            example_instructions_list: [
-                [
-                    new Instruction("ld", "F6", "+34", ""),
-                    new Instruction("ld", "F2", "+45", ""),
-                    new Instruction("ld", "F10", "+5", ""),
-                    new Instruction("addd", "F1", "F6", "F2"),
-                    new Instruction("st", "F10", "+1", ""),
-                    new Instruction("st", "F2", "+1", ""),
-                ],
-                [
-                    new Instruction("ld", "F6", "+34", ""),
-                    new Instruction("ld", "F2", "+45", ""),
-                    new Instruction("multd", "F2", "F4", "F1"),
-                    new Instruction("subd", "F6", "F2", "F8"),
-                    new Instruction("divd", "F1", "F6", "F10"),
-                    new Instruction("addd", "F8", "F2", "F6"),
-                    new Instruction("st", "F10", "19", "")
-                ],
-                [
-                    new Instruction("ld", "F6", "+34", ""),
-                    new Instruction("ld", "F1", "+45", ""),
-                    new Instruction("ld", "F10", "+5", ""),
-                    new Instruction("addd", "F1", "F6", "F2"),
-                    new Instruction("divd", "F10", "F1", "F4"),
-                    new Instruction("st", "F4", "+2", ""),
-                    new Instruction("st", "F10", "+1", ""),
-                    new Instruction("st", "F2", "+1", ""),
-                ],
-            ],
+            example_instructions_list: test_instructions_list,
             forward_step: 1,
             alert_list: [],
         };
