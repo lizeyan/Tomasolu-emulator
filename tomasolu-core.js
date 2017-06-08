@@ -898,6 +898,7 @@ class FPU {
     single_cycle_pass() {
         this.cycle_passed += 1;
         // console.log("\ncycle: " + this.cycle_passed);
+        this.reservation_station.write_back(this.cycle_passed)
 
         // 发射一条指令
         if (this.next_to_issue < this.num_instruction()) // has unissued instructions
@@ -925,7 +926,7 @@ class FPU {
         }
 
         //保留站和内存缓冲区工作，直到状态没有再变化
-        this.reservation_station.write_back(this.cycle_passed)
+        
         this.memory_buffer.write_back(this.cycle_passed)
         this.reservation_station.work(this.cycle_passed);
         this.memory_buffer.work(this.cycle_passed);
