@@ -27,6 +27,8 @@
    然后可以点击顶部操作栏中的`next cycle`和`previous cycle`单步调试FPU的执行。右侧`step`表示每次点击按钮移动的时钟数目。`current cycle`表示当前的时钟数。
 
    ![step](./report_source/step.png)
+   
+   在“内存”一栏输入任意地址即可查询这一地址的值，每个内存单元的初始值和地址是相同的。可以直接修改内存单元的值。
 
 4. 重新初始化
 
@@ -103,6 +105,54 @@
 `work`函数，进行更新保留站寄存器，释放已经结束的指令的计算资源，分配新的计算资源等处理
 
 `write_back`函数，将计算结束的结果写回，并更新所有同名的需要更新qj,qk
+
+### 4.MemoryBufferContent类
+
+此类代表一条Memory Buffer中的内容，也即一条指令及其状态的集合。
+
+`ins`表示此Memory Buffer条目中的指令
+
+`name`表示这个指令的名字，如ld1
+
+`running`表示该指令是否正在执行
+
+`busy`表示该Memory Buffer条目的busy状态
+
+`satisfy`表示该指令运行所需的寄存器条件是否已得到满足
+
+`data`表示这条访存指令读取或写入的数据
+
+`issue_time`表示这条指令issue的时间
+
+`begin_time`表示这条指令开始执行的时间
+
+`rank`表示这个Memory Buffer条目在Memory Buffer的第几位
+
+`exp`表示这条访存指令使用的寄存器中可能存在的表达式
+
+### 5.MemoryBuffer类
+
+此类代表一个加减乘除保留站集合
+
+`load_buffer_size`表示Load Buffer的容量，按照要求取3
+
+`store_buffer_size`表示Store Buffer的容量，按照要求取3
+
+`load_buffer_used`表示已经使用的Load Buffer的条目数
+
+` store_buffer_used`表示已经使用的Store Buffer的条目数
+
+`load_buffer`为一个数组，其中对象的类型为MemoryBufferContent，表示全部的Load Buffer条目，数组大小为3
+
+`store_buffer`为一个数组，其中对象的类型为MemoryBufferContent，表示全部的Store Buffer条目，数组大小为3
+
+`is_free`函数，根据指令是load还是store判断对应buffer是否有剩余空间
+
+`issue`函数，发射一条指令，并为这条指令分配并初始化一个Memory Buffer条目
+
+`work`函数，对于在Memory Buffer中的每条指令，判断其执行条件是否已得到满足，若已得到满足则执行指令
+
+`write_back`函数，将访存指令的结果写入寄存器或内存，并从Memory Buffer中去掉对应指令，腾出空间
 
 ## 四、前端实现介绍
 

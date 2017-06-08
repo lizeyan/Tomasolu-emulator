@@ -213,7 +213,6 @@ class MemoryBuffer {
                     this_content.name = ins.op + this_content.rank.toString();
                     this.load_buffer[i] = this_content;
                     this.fpu.register_file.set_expression(ins.rs, this_content.name);
-                    console.log("load buffer issued " + i, this.load_buffer[i]);
                     break;
                 }
             }
@@ -240,7 +239,6 @@ class MemoryBuffer {
                     // 设置写入寄存器的表达式
                     this_content.name = ins.op + this_content.rank.toString();
                     this.store_buffer[i] = this_content;
-                    console.log("store buffer issued " + i, this.store_buffer[i]);
                     break;
                 }
         }
@@ -267,8 +265,6 @@ class MemoryBuffer {
                         //某条load buffer里的更早issue的指令
                         if( ! this.load_buffer[j].running )
                         {
-                            console.log("the buffer being checked: ", i);
-                            console.log("the former buffer not running: ", j);
                             formerInsAllRunning = false;
                             break;
                         }
@@ -359,7 +355,6 @@ class MemoryBuffer {
                 {
                     // DO EXECUTE
                     this.load_buffer[i].data = this.fpu.memory.read(this.load_buffer[i].A);
-                    console.log("load buffer execute", this.load_buffer[i]);
                     this.load_buffer[i].ins.status_change_time["finish_time"] = current_cycle;
                     this.load_buffer[i].ins.status = "load_finish";
                 }
@@ -375,7 +370,6 @@ class MemoryBuffer {
                     {
                         this.store_buffer[i].data = this.fpu.register_file.read(this.store_buffer[i].rs);
                     }
-                    console.log("store buffer execute", this.store_buffer[i]);
                     this.store_buffer[i].ins.status_change_time["finish_time"] = current_cycle;
                     this.store_buffer[i].ins.status = "store_finish";
                 }
@@ -678,7 +672,6 @@ class ReservationStation {
                 //释放这个保留站的位置
                 this.add_used -= 1;
                 //释放计算资源
-                console.log("before release compute",this.add_reservation_stations[i]);
                 for(let j = 0; j < add_compute_num; ++j)
                     if(this.add_compute_work[j] === this.add_reservation_stations[i].rank)
                         this.add_compute_work[j] = -1;
@@ -726,7 +719,6 @@ class ReservationStation {
                     this.fpu.register_file.write(this.add_reservation_stations[i].rd, this.add_reservation_stations[i].ans);
                     //已写回的表达式为空
                     this.fpu.register_file.set_expression(this.add_reservation_stations[i].rd, "");
-                    console.log("add writeback rd : ", this.add_reservation_stations[i].rd)
                 }
                 // 更新所有保留站中vj vk和其名字相同的项
                 for(let j = 0; j < this.add_size; ++j){
@@ -1036,35 +1028,32 @@ function assert_memory_value(fpu, address, value) {
     assert(real === value, "read value in memory " + address + ":" + real + ", expected:" + value);
 }
 
-// test
-$(function () {
-    let test_function_list = [
-        function () {
-            let fpu = new FPU();
-            load_instructions(fpu, test_instructions_list[0]);
-            check_terminable(fpu);
-            assert_register_value(fpu, "F6", 34);
-            assert_register_value(fpu, "F10", 5);
-            assert_register_value(fpu, "F2", 34);
-            assert_memory_value(fpu, 1, 34);
-            assert_memory_value(fpu, 2, 2);
-            assert_memory_value(fpu, 45, 45);
-            assert_memory_value(fpu, 34, 34);
+const test_function_list = [
+    function () {
+        let fpu = new FPU();
+        load_instructions(fpu, test_instructions_list[0]);
+        check_terminable(fpu);
+        assert_register_value(fpu, "F6", 34);
+        assert_register_value(fpu, "F10", 5);
+        assert_register_value(fpu, "F2", 34);
+        assert_memory_value(fpu, 1, 34);
+        assert_memory_value(fpu, 2, 2);
+        assert_memory_value(fpu, 45, 45);
+        assert_memory_value(fpu, 34, 34);
 
-        },
-        function () {
-            let fpu = new FPU();
-            load_instructions(fpu, test_instructions_list[1]);
-            check_terminable(fpu);
-            assert_register_value(fpu, "F6", 34);
-            assert_register_value(fpu, "F4", 2);
-            assert_register_value(fpu, "F2", 45);
-            assert_register_value(fpu, "F1", 90);
-            assert_register_value(fpu, "F8", -11);
-            assert_register_value(fpu, "F10", 90 / 34);
-            assert_register_value(fpu, "F6", 34);
-            assert_memory_value(fpu, 19, 90 / 34);
-
+    },
+    function () {
+        let fpu = new FPU();
+        load_instructions(fpu, test_instructions_list[1]);
+        check_terminable(fpu);
+        assert_register_value(fpu, "F6", 34);
+        assert_register_value(fpu, "F4", 2);
+        assert_register_value(fpu, "F2", 45);
+        assert_register_value(fpu, "F1", 90);
+        assert_register_value(fpu, "F8", -11);
+        assert_register_value(fpu, "F10", 90 / 34);
+        assert_register_value(fpu, "F6", 34);
+        assert_memory_value(fpu, 19, 90 / 34);
         },
         function () {
             let fpu = new FPU();
@@ -1099,4 +1088,3 @@ $(function () {
         },
     ];
     apply_test(test_function_list);
-});
