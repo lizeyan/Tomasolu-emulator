@@ -111,6 +111,7 @@ class MemoryBufferContent{
         this.op = ins.op;
         this.rs = ins.rs;
         this.A = ins.rt;
+        this.exp = "";
         this.issue_time = 0;
         this.begin_time = 0; //这条指令开始计算的时间
         this.rank = 0; //在保留站的第几位
@@ -229,6 +230,7 @@ class MemoryBuffer {
             }
             else
             {
+                this_content.exp = this.fpu.register_file.get_expression(ins.rs);
                 this_content.satisfy = false; 
             }
             let rank = 0;
@@ -371,7 +373,10 @@ class MemoryBuffer {
                 if(current_cycle - this.store_buffer[i].begin_time === operations[this.store_buffer[i].op].exec_time)
                 {
                     // DO EXECUTE
-                    this.store_buffer[i].data = this.fpu.register_file.read(this.store_buffer[i].rs);
+                    if (this.store_buffer[i].data === 0)
+                    {
+                        this.store_buffer[i].data = this.fpu.register_file.read(this.store_buffer[i].rs);
+                    }
                     console.log("store buffer execute", this.store_buffer[i]);
                     this.store_buffer[i].ins.status_change_time["finish_time"] = current_cycle;
                     this.store_buffer[i].ins.status = "store_finish";
@@ -711,6 +716,15 @@ class ReservationStation {
                         this.multi_reservation_stations[j].vk = this.add_reservation_stations[i].ans;
                     }
                 }
+                for(let j = 0; j < this.fpu.memory_buffer.store_buffer_size; ++j){
+                    if(this.fpu.memory_buffer.store_buffer[j] === null)
+                        continue;
+                    if(this.fpu.memory_buffer.store_buffer[j].exp === this.add_reservation_stations[i].name){
+                        this.fpu.memory_buffer.store_buffer[j].data = this.add_reservation_stations[i].ans;
+                        this.fpu.memory_buffer.store_buffer[j].satisfy = true;
+                    }
+    
+                }
                 //写入这条指令的写回时间
                 this.add_reservation_stations[i].ins.status_change_time["write_time"] = current_cycle;
                 this.add_reservation_stations[i].ins.status = "finish";
@@ -752,6 +766,14 @@ class ReservationStation {
                     }
                     if(this.multi_reservation_stations[j].vk === "" && this.multi_reservation_stations[j].qk === this.multi_reservation_stations[i].name){
                         this.multi_reservation_stations[j].vk = this.multi_reservation_stations[i].ans;
+                    }
+                }
+                for(let j = 0; j < this.fpu.memory_buffer.store_buffer_size; ++j){
+                    if(this.fpu.memory_buffer.store_buffer[j] === null)
+                        continue;
+                    if(this.fpu.memory_buffer.store_buffer[j].exp === this.multi_reservation_stations[i].name){
+                        this.fpu.memory_buffer.store_buffer[j].data = this.multi_reservation_stations[i].ans;
+                        this.fpu.memory_buffer.store_buffer[j].satisfy = true;
                     }
                 }
                 //写入这条指令的写回时间
