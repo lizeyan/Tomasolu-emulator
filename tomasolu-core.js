@@ -425,6 +425,14 @@ class MemoryBuffer {
                                 this.fpu.reservation_station.multi_reservation_stations[j].qk = "";
                             }
                         }
+                        for(let j = 0; j < this.fpu.memory_buffer.store_buffer_size; ++j){
+                            if(this.store_buffer[j] === null)
+                                continue;
+                            if(this.store_buffer[j].exp === this.load_buffer[i].name){
+                                this.store_buffer[j].data = this.load_buffer[i].data;
+                                this.store_buffer[j].satisfy = true;
+                            }
+                        }
                     }
                 
                     this.load_buffer_used -= 1;
