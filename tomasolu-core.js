@@ -402,6 +402,33 @@ class MemoryBuffer {
                         //已写回的表达式为空
                         this.fpu.register_file.set_expression(this.load_buffer[i].rs, "");
                     }
+                    else
+                    {
+                        for(let j = 0; j < this.fpu.reservation_station.add_size; ++j){
+                            if(this.fpu.reservation_station.add_reservation_stations[j] === null)
+                                continue;
+                            if(this.fpu.reservation_station.add_reservation_stations[j].vj === "" && this.fpu.reservation_station.add_reservation_stations[j].qj === this.load_buffer[i].name){
+                                this.fpu.reservation_station.add_reservation_stations[j].vj = this.load_buffer[i].data;
+                                this.fpu.reservation_station.add_reservation_stations[j].qj = "";
+                            }
+                            if(this.fpu.reservation_station.add_reservation_stations[j].vk === "" && this.fpu.reservation_station.add_reservation_stations[j].qk === this.load_buffer[i].name){
+                                this.fpu.reservation_station.add_reservation_stations[j].vk = this.load_buffer[i].data;
+                                this.fpu.reservation_station.add_reservation_stations[j].qk = "";
+                            }
+                        }
+                        for(let j = 0; j < this.fpu.reservation_station.multi_size; ++j){
+                            if(this.fpu.reservation_station.multi_reservation_stations[j] === null)
+                                continue;
+                            if(this.fpu.reservation_station.multi_reservation_stations[j].vj === "" && this.fpu.reservation_station.multi_reservation_stations[j].qj === this.load_buffer[i].name){
+                                this.fpu.reservation_station.multi_reservation_stations[j].vj = this.load_buffer[i].data;
+                                this.fpu.reservation_station.multi_reservation_stations[j].qj = "";
+                            }
+                            if(this.fpu.reservation_station.multi_reservation_stations[j].vk === "" && this.fpu.reservation_station.multi_reservation_stations[j].qk === this.load_buffer[i].name){
+                                this.fpu.reservation_station.multi_reservation_stations[j].vk = this.load_buffer[i].data;
+                                this.fpu.reservation_station.multi_reservation_stations[j].qk = "";
+                            }
+                        }
+                    }
                 
                     this.load_buffer_used -= 1;
                     //写入这条指令的写回时间
@@ -552,11 +579,15 @@ class ReservationStation {
             if(this.add_reservation_stations[i] === null || this.add_reservation_stations[i].satisfy) continue;
             //更新vj和vk
             if(this.add_reservation_stations[i].vj === "")
-                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rs) === "")
+                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rs) === ""){
                     this.add_reservation_stations[i].vj = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rs);
+                    this.add_reservation_stations[i].qj = "";
+                }
             if(this.add_reservation_stations[i].vk === "")
-                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rt) === "")
+                if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rt) === ""){
                     this.add_reservation_stations[i].vk = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rt);
+                    this.add_reservation_stations[i].qk = "";
+                }
             //更新所有满足条件的保留站项目
             if(this.add_reservation_stations[i].vj !== "" && this.add_reservation_stations[i].vk !== "")
                 this.add_reservation_stations[i].satisfy = true;
@@ -566,11 +597,15 @@ class ReservationStation {
             if(this.multi_reservation_stations[i] === null || this.multi_reservation_stations[i].satisfy) continue;
             //更新vj和vk
             if(this.multi_reservation_stations[i].vj === "")
-                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rs) === "")
+                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rs) === ""){
                     this.multi_reservation_stations[i].vj = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rs);
+                    this.multi_reservation_stations[i].qj = "";
+                }
             if(this.multi_reservation_stations[i].vk === "")
-                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rt) === "")
+                if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rt) === ""){
                     this.multi_reservation_stations[i].vk = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rt);
+                    this.multi_reservation_stations[i].qk = "";
+                }
             //更新所有满足条件的保留站项目
             if(this.multi_reservation_stations[i].vj !== "" && this.multi_reservation_stations[i].vk !== "")
                 this.multi_reservation_stations[i].satisfy = true;
@@ -699,9 +734,11 @@ class ReservationStation {
                         continue;
                     if(this.add_reservation_stations[j].vj === "" && this.add_reservation_stations[j].qj === this.add_reservation_stations[i].name){
                         this.add_reservation_stations[j].vj = this.add_reservation_stations[i].ans;
+                        this.add_reservation_stations[j].qj = "";
                     }
                     if(this.add_reservation_stations[j].vk === "" && this.add_reservation_stations[j].qk === this.add_reservation_stations[i].name){
                         this.add_reservation_stations[j].vk = this.add_reservation_stations[i].ans;
+                        this.add_reservation_stations[j].qk = "";
                     }
                 }
                 for(let j = 0; j < this.multi_size; ++j){
@@ -709,9 +746,11 @@ class ReservationStation {
                         continue;
                     if(this.multi_reservation_stations[j].vj === "" && this.multi_reservation_stations[j].qj === this.add_reservation_stations[i].name){
                         this.multi_reservation_stations[j].vj = this.add_reservation_stations[i].ans;
+                        this.multi_reservation_stations[j].qj = "";
                     }
                     if(this.multi_reservation_stations[j].vk === "" && this.multi_reservation_stations[j].qk === this.add_reservation_stations[i].name){
                         this.multi_reservation_stations[j].vk = this.add_reservation_stations[i].ans;
+                        this.multi_reservation_stations[j].qk = "";
                     }
                 }
                 for(let j = 0; j < this.fpu.memory_buffer.store_buffer_size; ++j){
@@ -751,9 +790,11 @@ class ReservationStation {
                         continue;
                     if(this.add_reservation_stations[j].vj === "" && this.add_reservation_stations[j].qj === this.multi_reservation_stations[i].name){
                         this.add_reservation_stations[j].vj = this.multi_reservation_stations[i].ans;
+                        this.add_reservation_stations[j].qj = "";
                     }
                     if(this.add_reservation_stations[j].vk === "" && this.add_reservation_stations[j].qk === this.multi_reservation_stations[i].name){
                         this.add_reservation_stations[j].vk = this.multi_reservation_stations[i].ans;
+                        this.add_reservation_stations[j].qk = "";
                     }
                 }
                 for(let j = 0; j < this.multi_size; ++j){
@@ -761,9 +802,11 @@ class ReservationStation {
                         continue;
                     if(this.multi_reservation_stations[j].vj === "" && this.multi_reservation_stations[j].qj === this.multi_reservation_stations[i].name){
                         this.multi_reservation_stations[j].vj = this.multi_reservation_stations[i].ans;
+                        this.multi_reservation_stations[j].qj = "";
                     }
                     if(this.multi_reservation_stations[j].vk === "" && this.multi_reservation_stations[j].qk === this.multi_reservation_stations[i].name){
                         this.multi_reservation_stations[j].vk = this.multi_reservation_stations[i].ans;
+                        this.multi_reservation_stations[j].qk = "";
                     }
                 }
                 for(let j = 0; j < this.fpu.memory_buffer.store_buffer_size; ++j){
@@ -929,6 +972,7 @@ const test_instructions_list = [
         new Instruction("addd", "F3", "F3", "F3"),
     ],
     [
+        //读后写
         new Instruction("ld", "F1", "+12", ""),
         new Instruction("st", "F1", "+1", ""),
         new Instruction("ld", "F2", "+1", ""),
@@ -938,6 +982,24 @@ const test_instructions_list = [
         new Instruction("st", "F3", "12", ""),
         new Instruction("addd", "F3", "F3", "F3"),
     ],
+    [
+        //多重运算冲突
+        new Instruction("ld", "F6", "+25", ""),
+        new Instruction("ld", "F2", "+35", ""),
+        new Instruction("ld", "F4", "+2", ""),
+        new Instruction("multd", "F2", "F2", "F2"),
+        new Instruction("addd", "F2", "F4", "F4"),
+        new Instruction("divd", "F2", "F6", "F6"),
+        new Instruction("subd", "F2", "F4", "F6"),
+    ],
+    [
+        //多重存储冲突
+        new Instruction("ld", "F6", "+7", ""),
+        new Instruction("st", "F6", "+7", ""),
+        new Instruction("st", "F2", "+5", ""),
+        new Instruction("ld", "F2", "+5", ""),
+        new Instruction("st", "F2", "+7", ""),
+    ]
 ];
 
 function load_instructions(fpu, instruction_list) {
@@ -1017,6 +1079,23 @@ $(function () {
             check_terminable(fpu);
             assert_memory_value(fpu, 12, 144 * 144);
             assert_register_value(fpu, "F3", 144 * 144 * 2);
+        },
+        function () {
+            let fpu = new FPU();
+            load_instructions(fpu, test_instructions_list[4]);
+            check_terminable(fpu);
+            assert_register_value(fpu, "F2", 35 * 35);
+            assert_register_value(fpu, "F4", 35 * 35 + 2);
+            assert_register_value(fpu, "F6", -2);
+        },
+        function () {
+            let fpu = new FPU();
+            load_instructions(fpu, test_instructions_list[5]);
+            check_terminable(fpu);
+            assert_register_value(fpu, "F2", 0);
+            assert_register_value(fpu, "F6", 7);
+            assert_memory_value(fpu, 5, 0);
+            assert_memory_value(fpu, 7, 0);
         },
     ];
     apply_test(test_function_list);
