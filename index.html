@@ -153,18 +153,21 @@
                         </label>
                         <table class="table table-bordered table-responsive panel-body">
                             <colgroup>
-                                <col span="1" style="width: 33%;">
-                                <col span="1" style="width: 33%;">
-                                <col span="1" style="width: 33%;">
+                                <col span="1" style="width: 25%;">
+                                <col span="1" style="width: 25%;">
+                                <col span="1" style="width: 25%;">
+                                <col span="1" style="width: 25%;">
                             </colgroup>
                             <tbody>
                             <tr>
                                 <th>发射指令</th>
+                                <th>开始执行</th>
                                 <th>执行完毕</th>
                                 <th>写回结果</th>
                             </tr>
                             <tr v-for="instruction in fpu.instruction_list">
                                 <td>{{ valid_or_default(instruction.status_change_time.issue_time, "unknown") }}</td>
+                                <td>{{ valid_or_default(instruction.status_change_time.exec_time, "unknown") }}</td>
                                 <td>{{ valid_or_default(instruction.status_change_time.finish_time, "unknown") }}</td>
                                 <td>{{ valid_or_default(instruction.status_change_time.write_time, "unknown") }}</td>
                             </tr>
