@@ -922,17 +922,23 @@ const test_instructions_list = [
         new Instruction("multd", "F1", "F2", "F3"),
         new Instruction("addd", "F3", "F3", "F3"),
     ],
+    [
+        new Instruction("ld", "F1", "+12", ""),
+        new Instruction("st", "F1", "+1", ""),
+        new Instruction("ld", "F2", "+1", ""),
+        new Instruction("multd", "F1", "F2", "F3"),
+        new Instruction("multd", "F3", "F3", "F3"),
+        new Instruction("st", "F3", "12", ""),
+        new Instruction("addd", "F3", "F3", "F3"),
+    ],
 ];
-
 
 function load_instructions(fpu, instruction_list) {
     _.each(instruction_list, function (ins) {
         fpu.add_instruction(new Instruction(ins.op, ins.rs, ins.rt, ins.rd));
     });
 }
-
-function check_terminable(fpu)
-{
+function check_terminable(fpu) {
     let terminated = false;
     for (let i = 0; i < 10000; ++i) {
         fpu.single_cycle_pass();
@@ -952,7 +958,6 @@ function check_terminable(fpu)
         throw "unterminated sequence";
     }
 }
-
 function assert_register_value(fpu, address, value) {
     let real = fpu.register_file.read(address);
     assert(real === value, "read value in register " + address + ":" + real + ", expected:" + value);
@@ -998,7 +1003,14 @@ $(function () {
             check_terminable(fpu);
             assert_memory_value(fpu, "1", 12);
             assert_register_value(fpu, "F3", 288);
-        }
+        },
+        function () {
+            let fpu = new FPU();
+            load_instructions(fpu, test_instructions_list[3]);
+            check_terminable(fpu);
+            assert_memory_value(fpu, 12, 144 * 144);
+            assert_register_value(fpu, "F3", 144 * 144 * 2);
+        },
     ];
     apply_test(test_function_list);
 });
