@@ -60,7 +60,6 @@ Vue.component("tomasolu-view", {
             this.fpu.instruction_list.pop();
         },
         load_example_instructions: function (idx) {
-            this.initialize();
             _.each(this.example_instructions_list[idx], _.bind(function (ins) {
                 this.fpu.add_instruction(new Instruction(ins.op, ins.rs, ins.rt, ins.rd));
             }, this));
@@ -79,7 +78,46 @@ Vue.component("tomasolu-view", {
                 return JSON.stringify(this.fpu.register_file.data[name]);
             else
                 return name;
+        },
+        load_local_file_input: function (evt) {
+            if (!this.loading)
+                return;
+            let files = evt.target.files; // FileList object
+            for (let i = 0, f; f = files[i]; i++) {
+                let reader = new FileReader();
+                reader.onload = (_.bind(function(theFile) {return _.bind(function(e) {this.parse_input_text(e.target.result);}, this);}, this))(f);
+                reader.readAsText(f);
+            }
+        },
+        parse_input_text: function (text) {
+            if (!this.loading)
+                return;
+            const lt_regexp = /(\w+)\s+(F\d+)\s*,\s*([+\-]?\d+)/g;
+            const fp_regexp = /\s*(\w+)\s+(F\d+)\s*,\s*(F\d+)\s*,\s*(F\d+)\s*/g;
+            let lines = text.split(/[\r\n]+/g);
+            _.each(lines, _.bind(function (line) {
+                let lt_match = lt_regexp.exec(line);
+                let fp_match = fp_regexp.exec(line);
+                let match = null;
+                if (fp_match !== null)
+                    match = fp_match;
+                else if (lt_match !== null)
+                    match = lt_match;
+
+                if (match !== null) {
+                    let op = match[1].toLowerCase();
+                    if (op === "ld" || op === "st")
+                    {
+                        this.fpu.add_instruction(new Instruction(op, match[2], match[3], ""));
+                    }
+                    else if (op === "addd" || op === "multd" || op === "divd" || op === "subd")
+                    {
+                        this.fpu.add_instruction(new Instruction(op, match[3], match[4], match[2]));
+                    }
+                }
+            }, this));
         }
+
     }
     ,
     computed: {

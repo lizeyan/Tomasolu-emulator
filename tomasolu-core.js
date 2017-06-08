@@ -897,7 +897,7 @@ class FPU {
 
     single_cycle_pass() {
         this.cycle_passed += 1;
-        console.log("\ncycle: " + this.cycle_passed);
+        // console.log("\ncycle: " + this.cycle_passed);
 
         // 发射一条指令
         if (this.next_to_issue < this.num_instruction()) // has unissued instructions
@@ -1107,4 +1107,4 @@ const test_function_list = [
         assert_time_value(fpu, 4, 9);
     },
 ];
-apply_test(test_function_list);
+// apply_test(test_function_list);

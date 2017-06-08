@@ -46,7 +46,7 @@
                     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                         <ul class="nav navbar-nav">
                             <li>
-                                <button class="btn btn-primary navbar-btn" :disabled="loading" @click="initialize">
+                                <button class="btn btn-primary navbar-btn" @click="initialize">
                                     Initialize
                                 </button>
                             </li>
@@ -72,21 +72,26 @@
                         <form class="navbar-form navbar-left">
                             <div class="form-group">
                                 <label>Step:</label><input type="number" class="form-control"
-                                                                   title="Step" v-model="step" min="1"
-                                                                   max="999">
+                                                           title="Step" v-model="step" min="1"
+                                                           max="999">
                             </div>
                             <div class="form-group" style="margin-left: 2em;">
-                                <label><span class="glyphicon glyphicon-time glyphicon"></span>Current Cycle:</label> {{ fpu.cycle_passed }}
+                                <label><span class="glyphicon glyphicon-time glyphicon"></span>Current Cycle:</label> {{
+                                fpu.cycle_passed }}
                             </div>
                         </form>
+
+                        <form class="navbar-form form-inline navbar-right" v-if="loading">
+                            <label>Load File:</label>
+                            <input class="form-control" type="file" accept="text/*" @change="load_local_file_input($event)">
+                        </form>
+
                         <ul class="nav navbar-nav navbar-right" v-if="loading">
                             <li class="dropdown">
                                 <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
                                    aria-expanded="false">Load Example <span class="caret"></span></a>
                                 <ul class="dropdown-menu">
-                                    <li v-for="idx in range(0, example_instructions_list.length)"><a class="btn"
-                                                                                                     @click="load_example_instructions(idx)">Load
-                                        example{{ idx + 1}}</a></li>
+                                    <li v-for="idx in range(0, example_instructions_list.length)"><a class="btn"  @click="load_example_instructions(idx)"> Load example{{ idx + 1}}</a></li>
                                 </ul>
                             </li>
                         </ul>
@@ -116,29 +121,30 @@
                             <tbody>
                             <tr>
                                 <th class="text-center">Op</th>
+                                <th class="text-center">Rd</th>
                                 <th class="text-center">Rs</th>
                                 <th class="text-center">Rt</th>
-                                <th class="text-center">Rd</th>
                                 <th v-if="!loading">Status</th>
                             </tr>
 
                             <tr v-if="loading" v-for="instruction in fpu.instruction_list">
                                 <td><input type="text" v-model="instruction.op" title="op" size="10"></td>
+                                <td><input type="text" v-model="instruction.rd" title="rd" size="5"></td>
                                 <td><input type="text" v-model="instruction.rs" title="rs" size="5"></td>
                                 <td><input type="text" v-model="instruction.rt" title="rt" size="5"></td>
-                                <td><input type="text" v-model="instruction.rd" title="rd" size="5"></td>
                             </tr>
                             <tr v-else>
                                 <td>{{ instruction.op }}</td>
+                                <td :title="register_status(instruction.rd)">{{ instruction.rd }}</td>
                                 <td :title="register_status(instruction.rs)">{{ instruction.rs }}</td>
                                 <td :title="register_status(instruction.rt)">{{ instruction.rt }}</td>
-                                <td :title="register_status(instruction.rd)">{{ instruction.rd }}</td>
                                 <td>{{ instruction.status }}</td>
                             </tr>
 
                             </tbody>
                         </table>
-                        <div class="btn-group panel-footer" role="group" aria-label="..." style="width: 100%;" v-if="loading">
+                        <div class="btn-group panel-footer" role="group" aria-label="..." style="width: 100%;"
+                             v-if="loading">
                             <button class="btn btn-success" @click="push_empty_instruction">push
                             </button>
                             <button class="btn btn-warning" @click="pop_empty_instruction"
@@ -185,17 +191,14 @@
                         </label>
                         <table class="table table-bordered table-responsive panel-body table-hover">
                             <colgroup>
-                                <col span="1" style="width: 25%;">
-                                <col span="1" style="width: 25%;">
-                                <col span="1" style="width: 25%;">
-                                <col span="1" style="width: 25%;">
+                                <col v-for="idx in 5" span="1" style="width: 20%;">
                             </colgroup>
                             <tbody>
                             <tr>
                                 <th class="text-center"></th>
                                 <th class="text-center">Busy</th>
+                                <th class="text-center">Target</th>
                                 <th class="text-center">Address</th>
-                                <th class="text-center">Cache</th>
                             </tr>
                             <tr v-for="idx in range(0, fpu.memory_buffer.load_buffer.length)">
                                 <td>{{ 'Load' + (idx + 1)}}</td>
@@ -205,7 +208,7 @@
                                 <td>{{ fpu.memory_buffer.load_buffer[idx] === null ? '':
                                     fpu.memory_buffer.load_buffer[idx].rs }}
                                 </td>
-                                <td>{{ fpu.memory_buffer.load_buffer[idx] === null ? '':
+                                <td :title="'value if ' ">{{ fpu.memory_buffer.load_buffer[idx] === null ? '':
                                     fpu.memory_buffer.load_buffer[idx].A }}
                                 </td>
                             </tr>
@@ -252,68 +255,68 @@
             <div class="row">
                 <div class="col-md-12 flex-wrap">
                     <div class="panel panel-default" style="width: 100%;">
-                    <label class="align-center text-center panel-heading" style="width: 100%;">保留站</label>
-                    <table class="table table-responsive table-bordered panel-body table-hover">
-                        <colgroup>
-                            <col span="1" style="width: 5%;">
-                            <col span="1" style="width: 5%;">
-                            <col v-for="idx in 3" span="1" style="width: 10%;">
-                            <col v-for="idx in 2" span="1" style="width: 15%;">
-                        </colgroup>
-                        <tbody>
-                        <tr>
-                            <th>Name</th>
-                            <th>Busy</th>
-                            <th>Op</th>
-                            <th>Vj</th>
-                            <th>Vk</th>
-                            <th>Qj</th>
-                            <th>Qk</th>
-                        </tr>
-                        <tr v-for="idx in range(0, fpu.reservation_station.add_reservation_stations.length)">
-                            <td>{{ 'Add' + (idx + 1)}}</td>
-                            <td>{{ fpu.reservation_station.add_reservation_stations[idx] === null ? 'false':
-                                fpu.reservation_station.add_reservation_stations[idx].busy }}
-                            </td>
-                            <td>{{ fpu.reservation_station.add_reservation_stations[idx] === null ? '':
-                                fpu.reservation_station.add_reservation_stations[idx].op }}
-                            </td>
-                            <td>{{ fpu.reservation_station.add_reservation_stations[idx] === null ? '':
-                                fpu.reservation_station.add_reservation_stations[idx].vj }}
-                            </td>
-                            <td>{{ fpu.reservation_station.add_reservation_stations[idx] === null ? '':
-                                fpu.reservation_station.add_reservation_stations[idx].vk }}
-                            </td>
-                            <td>{{ fpu.reservation_station.add_reservation_stations[idx] === null ? '':
-                                fpu.reservation_station.add_reservation_stations[idx].qj }}
-                            </td>
-                            <td>{{ fpu.reservation_station.add_reservation_stations[idx] === null ? '':
-                                fpu.reservation_station.add_reservation_stations[idx].qk }}
-                            </td>
-                        </tr>
-                        <tr v-for="idx in range(0, fpu.reservation_station.multi_reservation_stations.length)">
-                            <td>{{ 'Multi' + (idx + 1)}}</td>
-                            <td>{{ fpu.reservation_station.multi_reservation_stations[idx] === null ? 'false':
-                                fpu.reservation_station.multi_reservation_stations[idx].busy }}
-                            </td>
-                            <td>{{ fpu.reservation_station.multi_reservation_stations[idx] === null ? '':
-                                fpu.reservation_station.multi_reservation_stations[idx].op }}
-                            </td>
-                            <td>{{ fpu.reservation_station.multi_reservation_stations[idx] === null ? '':
-                                fpu.reservation_station.multi_reservation_stations[idx].vj }}
-                            </td>
-                            <td>{{ fpu.reservation_station.multi_reservation_stations[idx] === null ? '':
-                                fpu.reservation_station.multi_reservation_stations[idx].vk }}
-                            </td>
-                            <td>{{ fpu.reservation_station.multi_reservation_stations[idx] === null ? '':
-                                fpu.reservation_station.multi_reservation_stations[idx].qj }}
-                            </td>
-                            <td>{{ fpu.reservation_station.multi_reservation_stations[idx] === null ? '':
-                                fpu.reservation_station.multi_reservation_stations[idx].qk }}
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
+                        <label class="align-center text-center panel-heading" style="width: 100%;">保留站</label>
+                        <table class="table table-responsive table-bordered panel-body table-hover">
+                            <colgroup>
+                                <col span="1" style="width: 5%;">
+                                <col span="1" style="width: 5%;">
+                                <col v-for="idx in 3" span="1" style="width: 10%;">
+                                <col v-for="idx in 2" span="1" style="width: 15%;">
+                            </colgroup>
+                            <tbody>
+                            <tr>
+                                <th>Name</th>
+                                <th>Busy</th>
+                                <th>Op</th>
+                                <th>Vj</th>
+                                <th>Vk</th>
+                                <th>Qj</th>
+                                <th>Qk</th>
+                            </tr>
+                            <tr v-for="idx in range(0, fpu.reservation_station.add_reservation_stations.length)">
+                                <td>{{ 'Add' + (idx + 1)}}</td>
+                                <td>{{ fpu.reservation_station.add_reservation_stations[idx] === null ? 'false':
+                                    fpu.reservation_station.add_reservation_stations[idx].busy }}
+                                </td>
+                                <td>{{ fpu.reservation_station.add_reservation_stations[idx] === null ? '':
+                                    fpu.reservation_station.add_reservation_stations[idx].op }}
+                                </td>
+                                <td>{{ fpu.reservation_station.add_reservation_stations[idx] === null ? '':
+                                    fpu.reservation_station.add_reservation_stations[idx].vj }}
+                                </td>
+                                <td>{{ fpu.reservation_station.add_reservation_stations[idx] === null ? '':
+                                    fpu.reservation_station.add_reservation_stations[idx].vk }}
+                                </td>
+                                <td>{{ fpu.reservation_station.add_reservation_stations[idx] === null ? '':
+                                    fpu.reservation_station.add_reservation_stations[idx].qj }}
+                                </td>
+                                <td>{{ fpu.reservation_station.add_reservation_stations[idx] === null ? '':
+                                    fpu.reservation_station.add_reservation_stations[idx].qk }}
+                                </td>
+                            </tr>
+                            <tr v-for="idx in range(0, fpu.reservation_station.multi_reservation_stations.length)">
+                                <td>{{ 'Multi' + (idx + 1)}}</td>
+                                <td>{{ fpu.reservation_station.multi_reservation_stations[idx] === null ? 'false':
+                                    fpu.reservation_station.multi_reservation_stations[idx].busy }}
+                                </td>
+                                <td>{{ fpu.reservation_station.multi_reservation_stations[idx] === null ? '':
+                                    fpu.reservation_station.multi_reservation_stations[idx].op }}
+                                </td>
+                                <td>{{ fpu.reservation_station.multi_reservation_stations[idx] === null ? '':
+                                    fpu.reservation_station.multi_reservation_stations[idx].vj }}
+                                </td>
+                                <td>{{ fpu.reservation_station.multi_reservation_stations[idx] === null ? '':
+                                    fpu.reservation_station.multi_reservation_stations[idx].vk }}
+                                </td>
+                                <td>{{ fpu.reservation_station.multi_reservation_stations[idx] === null ? '':
+                                    fpu.reservation_station.multi_reservation_stations[idx].qj }}
+                                </td>
+                                <td>{{ fpu.reservation_station.multi_reservation_stations[idx] === null ? '':
+                                    fpu.reservation_station.multi_reservation_stations[idx].qk }}
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -322,24 +325,27 @@
             <div class="row">
                 <div class="col-md-12 flex-wrap">
                     <div class="panel panel-default" style="width: 100%;">
-                    <label class="align-center text-center panel-heading" style="width: 100%;">内存</label>
-                    <table class="table table-responsive table-bordered panel-body table-hover">
-                        <tbody>
-                        <tr>
-                            <th>地址</th>
-                            <td class="text-center" v-for="idx in range(0, memory_query_addresses.length)"><input
-                                    type="text" size="6" title="address"
-                                    :id="'te-view-display-mem-address-'+idx + '-input'" placeholder="address"
-                                    v-model="memory_query_addresses[idx]"></td>
-                        </tr>
-                        <tr>
-                            <th>内容</th>
-                            <td class="text-center" v-for="idx in range(0, memory_query_addresses.length)" v-if="fpu.memory.read(memory_query_addresses[idx]) !== null">
-                                <input type="number" v-model="fpu.memory.data[memory_query_addresses[idx]]" :title="'value of ' + memory_query_addresses[idx]" max="1000000" min="-1000000">
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
+                        <label class="align-center text-center panel-heading" style="width: 100%;">内存</label>
+                        <table class="table table-responsive table-bordered panel-body table-hover">
+                            <tbody>
+                            <tr>
+                                <th>地址</th>
+                                <td class="text-center" v-for="idx in range(0, memory_query_addresses.length)"><input
+                                        type="text" size="6" title="address"
+                                        :id="'te-view-display-mem-address-'+idx + '-input'" placeholder="address"
+                                        v-model="memory_query_addresses[idx]"></td>
+                            </tr>
+                            <tr>
+                                <th>内容</th>
+                                <td class="text-center" v-for="idx in range(0, memory_query_addresses.length)"
+                                    v-if="fpu.memory.read(memory_query_addresses[idx]) !== null">
+                                    <input type="number" v-model="fpu.memory.data[memory_query_addresses[idx]]"
+                                           :title="'value of ' + memory_query_addresses[idx]" max="1000000"
+                                           min="-1000000">
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -348,33 +354,33 @@
             <div class="row">
                 <div class="col-md-12 flex-wrap">
                     <div class="panel panel-default" style="width: 100%;">
-                    <label class="align-center text-center panel-heading" style="width: 100%;">浮点寄存器</label>
-                    <table class="table table-responsive table-bordered panel-body">
-                        <tbody>
-                        <tr>
-                            <th>地址</th>
-                            <td class="text-center" v-for="idx in 16"
-                                :id="'te-view-display-floating-point-register-address-'+idx+'-td'">F{{ idx }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>内容</th>
-                            <td class="text-center" v-for="idx in 16" :key="idx"
-                                v-if="fpu.register_file.read('F' + idx) !== null">{{ fpu.register_file.data['F' +
-                                idx].value
-                                }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>表达式</th>
-                            <td class="text-center" v-for="idx in 16" :key="idx"
-                                v-if="fpu.register_file.read('F' + idx) !== null">{{ fpu.register_file.data['F' +
-                                idx].expression
-                                }}
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
+                        <label class="align-center text-center panel-heading" style="width: 100%;">浮点寄存器</label>
+                        <table class="table table-responsive table-bordered panel-body">
+                            <tbody>
+                            <tr>
+                                <th>地址</th>
+                                <td class="text-center" v-for="idx in 16"
+                                    :id="'te-view-display-floating-point-register-address-'+idx+'-td'">F{{ idx }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>内容</th>
+                                <td class="text-center" v-for="idx in 16" :key="idx"
+                                    v-if="fpu.register_file.read('F' + idx) !== null">{{ fpu.register_file.data['F' +
+                                    idx].value
+                                    }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>表达式</th>
+                                <td class="text-center" v-for="idx in 16" :key="idx"
+                                    v-if="fpu.register_file.read('F' + idx) !== null">{{ fpu.register_file.data['F' +
+                                    idx].expression
+                                    }}
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
