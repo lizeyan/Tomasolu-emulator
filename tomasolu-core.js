@@ -258,30 +258,33 @@ class MemoryBuffer {
             {
                 formerInsAllRunning = true;
 
-                for(let j = 0; j < this.load_buffer_size; ++j)
-                {
-                    if(this.load_buffer[j] !== null && this.load_buffer[j].issue_time < this.load_buffer[i].issue_time)
-                    {
-                        //某条load buffer里的更早issue的指令
-                        if( ! this.load_buffer[j].running )
-                        {
-                            formerInsAllRunning = false;
-                            break;
-                        }
-                    }
-                }
-                // for(let j = 0; j < this.store_buffer_size; ++j)
+                // for(let j = 0; j < this.load_buffer_size; ++j)
                 // {
-                //     if(this.store_buffer[j] !== null && this.store_buffer[j].issue_time < this.load_buffer[i].issue_time)
+                //     if(this.load_buffer[j] !== null && this.load_buffer[j].issue_time < this.load_buffer[i].issue_time)
                 //     {
-                //         //某条store buffer里的更早issue的指令
-                //         if( ! this.store_buffer[j].running )
+                //         //某条load buffer里的更早issue的指令
+                //         if( ! this.load_buffer[j].running )
                 //         {
                 //             formerInsAllRunning = false;
                 //             break;
                 //         }
                 //     }
                 // }
+                for(let j = 0; j < this.store_buffer_size; ++j)
+                {
+                    if(this.store_buffer[j] !== null && this.store_buffer[j].issue_time < this.load_buffer[i].issue_time)
+                    {
+                        //某条store buffer里的更早issue的指令
+                        if( ! this.store_buffer[j].running )
+                        {
+                            if(this.store_buffer[j].A === this.store_buffer[j].A)
+                            {
+                                formerInsAllRunning = false;
+                                break;
+                            }
+                        }
+                    }
+                }
 
                 if(formerInsAllRunning) // 如果之前issue的且还在buffer中的指令都已运行，就可以开始运行当前指令
                 {
