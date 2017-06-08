@@ -27,7 +27,7 @@
    然后可以点击顶部操作栏中的`next cycle`和`previous cycle`单步调试FPU的执行。右侧`step`表示每次点击按钮移动的时钟数目。`current cycle`表示当前的时钟数。
 
    ![step](./report_source/step.png)
-   
+
    在“内存”一栏输入任意地址即可查询这一地址的值，每个内存单元的初始值和地址是相同的。可以直接修改内存单元的值。
 
 4. 重新初始化
@@ -257,6 +257,45 @@ assert_register_value(fpu, "F3", 144 * 144 * 2);
 ```
 
 这个验证了内存和寄存器的读后写冲突能不能解决。
+
+### TestCase5
+
+```javascript
+new Instruction("ld", "F6", "+25", ""),
+new Instruction("ld", "F2", "+35", ""),
+new Instruction("ld", "F4", "+2", ""),
+new Instruction("multd", "F2", "F2", "F2"),
+new Instruction("addd", "F2", "F4", "F4"),
+new Instruction("divd", "F2", "F6", "F6"),
+new Instruction("subd", "F2", "F4", "F6"),
+```
+
+```javascript
+assert_register_value(fpu, "F2", 35 * 35);
+assert_register_value(fpu, "F4", 35 * 35 + 2);
+assert_register_value(fpu, "F6", -2);
+```
+
+这个验证了多重运算冲突能否解决
+
+### TestCase6
+
+```javascript
+new Instruction("ld", "F6", "+7", ""),
+new Instruction("st", "F6", "+7", ""),
+new Instruction("st", "F2", "+5", ""),
+new Instruction("ld", "F2", "+5", ""),
+new Instruction("st", "F2", "+7", ""),
+```
+
+```javascript
+assert_register_value(fpu, "F2", 0);
+assert_register_value(fpu, "F6", 7);
+assert_memory_value(fpu, 5, 0);
+assert_memory_value(fpu, 7, 0);
+```
+
+这个验证了多重存储冲突能否解决
 
 ## 六、备注
 

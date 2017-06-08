@@ -1054,37 +1054,37 @@ const test_function_list = [
         assert_register_value(fpu, "F10", 90 / 34);
         assert_register_value(fpu, "F6", 34);
         assert_memory_value(fpu, 19, 90 / 34);
-        },
-        function () {
-            let fpu = new FPU();
-            load_instructions(fpu, test_instructions_list[2]);
-            check_terminable(fpu);
-            assert_memory_value(fpu, "1", 12);
-            assert_register_value(fpu, "F3", 288);
-        },
-        function () {
-            let fpu = new FPU();
-            load_instructions(fpu, test_instructions_list[3]);
-            check_terminable(fpu);
-            assert_memory_value(fpu, 12, 144 * 144);
-            assert_register_value(fpu, "F3", 144 * 144 * 2);
-        },
-        function () {
-            let fpu = new FPU();
-            load_instructions(fpu, test_instructions_list[4]);
-            check_terminable(fpu);
-            assert_register_value(fpu, "F2", 35 * 35);
-            assert_register_value(fpu, "F4", 35 * 35 + 2);
-            assert_register_value(fpu, "F6", -2);
-        },
-        function () {
-            let fpu = new FPU();
-            load_instructions(fpu, test_instructions_list[5]);
-            check_terminable(fpu);
-            assert_register_value(fpu, "F2", 0);
-            assert_register_value(fpu, "F6", 7);
-            assert_memory_value(fpu, 5, 0);
-            assert_memory_value(fpu, 7, 0);
-        },
-    ];
-    apply_test(test_function_list);
+    },
+    function () {
+        let fpu = new FPU();
+        load_instructions(fpu, test_instructions_list[2]);
+        check_terminable(fpu);
+        assert_memory_value(fpu, "1", 12);
+        assert_register_value(fpu, "F3", 288);
+    },
+    function () {
+        let fpu = new FPU();
+        load_instructions(fpu, test_instructions_list[3]);
+        check_terminable(fpu);
+        assert_memory_value(fpu, 12, 144 * 144);
+        assert_register_value(fpu, "F3", 144 * 144 * 2);
+    },
+    function () {
+        let fpu = new FPU();
+        load_instructions(fpu, test_instructions_list[4]);
+        check_terminable(fpu);
+        assert_register_value(fpu, "F2", 35 * 35);
+        assert_register_value(fpu, "F4", 35 * 35 + 2);
+        assert_register_value(fpu, "F6", -2);
+    },
+    function () {
+        let fpu = new FPU();
+        load_instructions(fpu, test_instructions_list[5]);
+        check_terminable(fpu);
+        assert_register_value(fpu, "F2", 0);
+        assert_register_value(fpu, "F6", 7);
+        assert_memory_value(fpu, 5, 0);
+        assert_memory_value(fpu, 7, 0);
+    },
+];
+apply_test(test_function_list);
