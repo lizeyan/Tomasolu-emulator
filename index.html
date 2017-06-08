@@ -138,11 +138,11 @@
 
                             </tbody>
                         </table>
-                        <div class="btn-group panel-footer" role="group" aria-label="..." style="width: 100%;">
-                            <button class="btn btn-success" @click="push_empty_instruction" :disabled="!loading">push
+                        <div class="btn-group panel-footer" role="group" aria-label="..." style="width: 100%;" v-if="loading">
+                            <button class="btn btn-success" @click="push_empty_instruction">push
                             </button>
                             <button class="btn btn-warning" @click="pop_empty_instruction"
-                                    :disabled="!loading || fpu.instruction_list.length <= 0">pop
+                                    :disabled="fpu.instruction_list.length <= 0">pop
                             </button>
                         </div>
                     </div>

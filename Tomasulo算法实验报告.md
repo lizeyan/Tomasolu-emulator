@@ -27,6 +27,8 @@
    然后可以点击顶部操作栏中的`next cycle`和`previous cycle`单步调试FPU的执行。右侧`step`表示每次点击按钮移动的时钟数目。`current cycle`表示当前的时钟数。
 
    ![step](./report_source/step.png)
+   
+   在“内存”一栏输入任意地址即可查询这一地址的值，每个内存单元的初始值和地址是相同的。可以直接修改内存单元的值。
 
 4. 重新初始化
 
