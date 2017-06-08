@@ -270,18 +270,18 @@ class MemoryBuffer {
                         }
                     }
                 }
-                for(let j = 0; j < this.store_buffer_size; ++j)
-                {
-                    if(this.store_buffer[j] !== null && this.store_buffer[j].issue_time < this.load_buffer[i].issue_time)
-                    {
-                        //某条store buffer里的更早issue的指令
-                        if( ! this.store_buffer[j].running )
-                        {
-                            formerInsAllRunning = false;
-                            break;
-                        }
-                    }
-                }
+                // for(let j = 0; j < this.store_buffer_size; ++j)
+                // {
+                //     if(this.store_buffer[j] !== null && this.store_buffer[j].issue_time < this.load_buffer[i].issue_time)
+                //     {
+                //         //某条store buffer里的更早issue的指令
+                //         if( ! this.store_buffer[j].running )
+                //         {
+                //             formerInsAllRunning = false;
+                //             break;
+                //         }
+                //     }
+                // }
 
                 if(formerInsAllRunning) // 如果之前issue的且还在buffer中的指令都已运行，就可以开始运行当前指令
                 {
