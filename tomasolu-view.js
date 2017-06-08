@@ -14,6 +14,12 @@ Vue.component("tomasolu-view", {
             alert_list: [],
         };
     },
+    created: function () {
+        if (apply_test(test_function_list, console.log))
+            this.popup_alert("Unit Test All Pass", "success");
+        else
+            this.popup_alert("Unit Test Failed. Open console to view detail.", "danger");
+    },
     methods: {
         next_cycle: function () {
             this.fpu.cycle_pass(this.step);

@@ -2,6 +2,8 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Tomasolu</title>
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="lib/bootstrap-3.3.7-dist/css/bootstrap.min.css">
@@ -44,7 +46,7 @@
                     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                         <ul class="nav navbar-nav">
                             <li>
-                                <button class="btn btn-warning navbar-btn" :disabled="loading" @click="initialize">
+                                <button class="btn btn-primary navbar-btn" :disabled="loading" @click="initialize">
                                     Initialize
                                 </button>
                             </li>
@@ -54,13 +56,15 @@
                                 </button>
                             </li>
                             <li>
-                                <button class="btn btn-default navbar-btn" :disabled="loading" @click="next_cycle">Next
-                                    Cycle
+                                <button class="btn btn-default navbar-btn" :disabled="loading" @click="next_cycle">
+                                    <span class="glyphicon glyphicon glyphicon-forward"></span>
+                                    Next Cycle
                                 </button>
                             </li>
                             <li>
-                                <button class="btn btn-default navbar-btn" :disabled="loading" @click="last_cycle">Previous
-                                    Cycle
+                                <button class="btn btn-default navbar-btn" :disabled="loading" @click="last_cycle">
+                                    <span class="glyphicon glyphicon glyphicon-backward"></span>
+                                    Previous Cycle
                                 </button>
                             </li>
                         </ul>
@@ -71,10 +75,8 @@
                                                                    title="Step" v-model="step" min="1"
                                                                    max="999">
                             </div>
-                            <div class="form-group">
-                                <label>Current Cycle</label><input type="number" class="form-control"
-                                                                   title="Forward Step" v-model="fpu.cycle_passed"
-                                                                   readonly min="0" max="99999">
+                            <div class="form-group" style="margin-left: 2em;">
+                                <label><span class="glyphicon glyphicon-time glyphicon"></span>Current Cycle:</label> {{ fpu.cycle_passed }}
                             </div>
                         </form>
                         <ul class="nav navbar-nav navbar-right" v-if="loading">
@@ -104,7 +106,7 @@
                         <label class="text-center align-center panel-heading" style="width: 100%;">
                             指令队列
                         </label>
-                        <table class="table table-bordered table-responsive panel-body">
+                        <table class="table table-bordered table-responsive panel-body table-hover">
                             <colgroup>
                                 <col span="1" style="width: 40%;">
                                 <col span="1" style="width: 20%;">
@@ -151,7 +153,7 @@
                         <label class="text-center align-center panel-heading" style="width: 100%;">
                             运行结果
                         </label>
-                        <table class="table table-bordered table-responsive panel-body">
+                        <table class="table table-bordered table-responsive panel-body table-hover">
                             <colgroup>
                                 <col span="1" style="width: 25%;">
                                 <col span="1" style="width: 25%;">
@@ -181,7 +183,7 @@
                         <label class="text-center align-center panel-heading" style="width: 100%;">
                             Load Queue
                         </label>
-                        <table class="table table-bordered table-responsive panel-body">
+                        <table class="table table-bordered table-responsive panel-body table-hover">
                             <colgroup>
                                 <col span="1" style="width: 25%;">
                                 <col span="1" style="width: 25%;">
@@ -215,7 +217,7 @@
                         <label class="text-center align-center panel-heading" style="width: 100%;">
                             Store Queue
                         </label>
-                        <table class="table table-bordered table-responsive panel-body">
+                        <table class="table table-bordered table-responsive panel-body table-hover">
                             <colgroup>
                                 <col span="1" style="width: 25%;">
                                 <col span="1" style="width: 25%;">
@@ -251,7 +253,7 @@
                 <div class="col-md-12 flex-wrap">
                     <div class="panel panel-default" style="width: 100%;">
                     <label class="align-center text-center panel-heading" style="width: 100%;">保留站</label>
-                    <table class="table table-responsive table-bordered panel-body">
+                    <table class="table table-responsive table-bordered panel-body table-hover">
                         <colgroup>
                             <col span="1" style="width: 5%;">
                             <col span="1" style="width: 5%;">
@@ -321,7 +323,7 @@
                 <div class="col-md-12 flex-wrap">
                     <div class="panel panel-default" style="width: 100%;">
                     <label class="align-center text-center panel-heading" style="width: 100%;">内存</label>
-                    <table class="table table-responsive table-bordered panel-body">
+                    <table class="table table-responsive table-bordered panel-body table-hover">
                         <tbody>
                         <tr>
                             <th>地址</th>

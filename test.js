@@ -12,7 +12,6 @@ function apply_test(test_func_list, print=console.log) {
         catch (err) {
             test_passed = false;
             print("tomasolu core test " + index + " failed: " + err);
-            throw err;
         }
     });
     if (test_passed)
