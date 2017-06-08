@@ -60,6 +60,7 @@ Vue.component("tomasolu-view", {
             this.fpu.instruction_list.pop();
         },
         load_example_instructions: function (idx) {
+            this.initialize();
             _.each(this.example_instructions_list[idx], _.bind(function (ins) {
                 this.fpu.add_instruction(new Instruction(ins.op, ins.rs, ins.rt, ins.rd));
             }, this));
@@ -82,6 +83,7 @@ Vue.component("tomasolu-view", {
         load_local_file_input: function (evt) {
             if (!this.loading)
                 return;
+            this.initialize();
             let files = evt.target.files; // FileList object
             for (let i = 0, f; f = files[i]; i++) {
                 let reader = new FileReader();
@@ -92,12 +94,12 @@ Vue.component("tomasolu-view", {
         parse_input_text: function (text) {
             if (!this.loading)
                 return;
-            const lt_regexp = /(\w+)\s+(F\d+)\s*,\s*([+\-]?\d+)/g;
-            const fp_regexp = /\s*(\w+)\s+(F\d+)\s*,\s*(F\d+)\s*,\s*(F\d+)\s*/g;
             let lines = text.split(/[\r\n]+/g);
-            _.each(lines, _.bind(function (line) {
-                let lt_match = lt_regexp.exec(line);
-                let fp_match = fp_regexp.exec(line);
+            for (let idx = 0; idx < lines.length; ++idx) {
+                let line = lines[idx];
+                //JS脑残语言,不能预先定义regexp变量，会出问题
+                let lt_match = /\s*(\w+)\s+(F\d+)\s*,\s*([+\-]?\d+)\s*/g.exec(line);
+                let fp_match = /\s*(\w+)\s+(F\d+)\s*,\s*(F\d+)\s*,\s*(F\d+)\s*/g.exec(line);
                 let match = null;
                 if (fp_match !== null)
                     match = fp_match;
@@ -115,7 +117,7 @@ Vue.component("tomasolu-view", {
                         this.fpu.add_instruction(new Instruction(op, match[3], match[4], match[2]));
                     }
                 }
-            }, this));
+            }
         }
 
     }

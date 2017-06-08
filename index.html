@@ -199,6 +199,7 @@
                                 <th class="text-center">Busy</th>
                                 <th class="text-center">Target</th>
                                 <th class="text-center">Address</th>
+                                <th class="text-center">Cache</th>
                             </tr>
                             <tr v-for="idx in range(0, fpu.memory_buffer.load_buffer.length)">
                                 <td>{{ 'Load' + (idx + 1)}}</td>
@@ -208,8 +209,11 @@
                                 <td>{{ fpu.memory_buffer.load_buffer[idx] === null ? '':
                                     fpu.memory_buffer.load_buffer[idx].rs }}
                                 </td>
-                                <td :title="'value if ' ">{{ fpu.memory_buffer.load_buffer[idx] === null ? '':
+                                <td>{{ fpu.memory_buffer.load_buffer[idx] === null ? '':
                                     fpu.memory_buffer.load_buffer[idx].A }}
+                                </td>
+                                <td>{{ fpu.memory_buffer.load_buffer[idx] === null ? '':
+                                    fpu.memory_buffer.load_buffer[idx].data }}
                                 </td>
                             </tr>
                             </tbody>
