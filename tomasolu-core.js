@@ -253,7 +253,7 @@ class MemoryBuffer {
     work (current_cycle) {
         // console.log("work -- load buffer[2] " + this.load_buffer[2]);
         let formerInsAllRunning;
-// 判断是否开始执行，设置开始执行时间
+        // 判断是否开始执行，设置开始执行时间
         for(let i = 0; i < this.load_buffer_size; ++i)
         {             
             if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].satisfy && !this.load_buffer[i].running && this.load_buffer[i].ins.status_change_time["issue_time"] !== current_cycle)
