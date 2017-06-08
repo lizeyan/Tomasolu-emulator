@@ -1027,6 +1027,10 @@ function assert_memory_value(fpu, address, value) {
     let real = fpu.memory.read(address);
     assert(real === value, "read value in memory " + address + ":" + real + ", expected:" + value);
 }
+function assert_time_value(fpu, ins_rank, value) {
+    let real = fpu.instruction_list[ins_rank].status_change_time["write_time"];
+    assert(real === value, "real value is: " + value);
+}
 
 const test_function_list = [
     function () {
@@ -1040,7 +1044,7 @@ const test_function_list = [
         assert_memory_value(fpu, 2, 2);
         assert_memory_value(fpu, 45, 45);
         assert_memory_value(fpu, 34, 34);
-
+        assert_time_value(fpu, 5, 9);
     },
     function () {
         let fpu = new FPU();
@@ -1054,6 +1058,7 @@ const test_function_list = [
         assert_register_value(fpu, "F10", 90 / 34);
         assert_register_value(fpu, "F6", 34);
         assert_memory_value(fpu, 19, 90 / 34);
+        assert_time_value(fpu, 7, 58);
     },
     function () {
         let fpu = new FPU();
@@ -1061,6 +1066,7 @@ const test_function_list = [
         check_terminable(fpu);
         assert_memory_value(fpu, "1", 12);
         assert_register_value(fpu, "F3", 288);
+        assert_time_value(fpu, 4, 19);
     },
     function () {
         let fpu = new FPU();
@@ -1068,6 +1074,7 @@ const test_function_list = [
         check_terminable(fpu);
         assert_memory_value(fpu, 12, 144 * 144);
         assert_register_value(fpu, "F3", 144 * 144 * 2);
+        assert_time_value(fpu, 7, 29);
     },
     function () {
         let fpu = new FPU();
@@ -1076,6 +1083,7 @@ const test_function_list = [
         assert_register_value(fpu, "F2", 35 * 35);
         assert_register_value(fpu, "F4", 35 * 35 + 2);
         assert_register_value(fpu, "F6", -2);
+        assert_time_value(fpu, 5, 55);
     },
     function () {
         let fpu = new FPU();
@@ -1085,6 +1093,7 @@ const test_function_list = [
         assert_register_value(fpu, "F6", 7);
         assert_memory_value(fpu, 5, 0);
         assert_memory_value(fpu, 7, 0);
+        assert_time_value(fpu, 4, 9);
     },
 ];
 apply_test(test_function_list);
