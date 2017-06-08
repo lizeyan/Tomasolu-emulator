@@ -357,7 +357,7 @@ class MemoryBuffer {
         for(let i = 0; i < this.load_buffer_size; ++i)
             if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].satisfy && this.load_buffer[i].ins.status_change_time["issue_time"] != current_cycle)
             {
-                if(current_cycle - this.load_buffer[i].begin_time === operations[this.load_buffer[i].op].exec_time)
+                if(current_cycle - this.load_buffer[i].begin_time === operations[this.load_buffer[i].op].exec_time - 1)
                 {
                     // DO EXECUTE
                     this.load_buffer[i].data = this.fpu.memory.read(this.load_buffer[i].A);
@@ -370,7 +370,7 @@ class MemoryBuffer {
          for(let i = 0; i < this.store_buffer_size; ++i)
             if(this.store_buffer[i] !== null && this.store_buffer[i].busy && this.store_buffer[i].satisfy && this.store_buffer[i].ins.status_change_time["issue_time"] != current_cycle)
             {
-                if(current_cycle - this.store_buffer[i].begin_time === operations[this.store_buffer[i].op].exec_time)
+                if(current_cycle - this.store_buffer[i].begin_time === operations[this.store_buffer[i].op].exec_time - 1)
                 {
                     // DO EXECUTE
                     if (this.store_buffer[i].data === 0)
@@ -395,7 +395,7 @@ class MemoryBuffer {
         {
             if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].running)
             {
-                if(current_cycle - this.load_buffer[i].begin_time === operations[this.load_buffer[i].op].exec_time + 1)
+                if(current_cycle - this.load_buffer[i].begin_time === operations[this.load_buffer[i].op].exec_time)
                 {
                     // DO WRITEBACK
                     if(this.fpu.register_file.get_expression(this.load_buffer[i].rs) === this.load_buffer[i].name)
@@ -418,7 +418,7 @@ class MemoryBuffer {
         {
             if(this.store_buffer[i] !== null && this.store_buffer[i].busy && this.store_buffer[i].running)
             {
-                if(current_cycle - this.store_buffer[i].begin_time === operations[this.store_buffer[i].op].exec_time + 1)
+                if(current_cycle - this.store_buffer[i].begin_time === operations[this.store_buffer[i].op].exec_time)
                 {
                     // DO WRITE MEMORY
                     this.fpu.memory.write(this.store_buffer[i].A, this.store_buffer[i].data);
