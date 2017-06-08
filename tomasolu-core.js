@@ -70,7 +70,6 @@ class Instruction {
         this.rd = rd;
         this.status = ""; //指令状态: queue, issue, exec, exec_finish, finish
         this.status_change_time = {}; // 指令的运行状态的四个时间，发射指令时间(issue_time)，开始执行时间(exec_time)，执行完毕时间(finish_time)，写回结果时间(write_time)
-        this.operation = operations[op];
     }
 
     toString() {
@@ -79,12 +78,11 @@ class Instruction {
 }
 
 class ReservationContent{
-    constructor(op, rs, ins, running=false, busy=false, satisfy=false, time=0, name="", vj="", vk="", qj="", qk=""){
+    constructor(op, rs, ins, running=false, busy=false, satisfy=false, name="", vj="", vk="", qj="", qk=""){
         this.name = name;
         this.busy = busy; 
         this.running = running;
         this.satisfy = satisfy; //是否满足两个寄存器都可取
-        this.time = time;
         this.ins = ins;
         this.op = op;
         this.rs = rs;
@@ -101,7 +99,7 @@ class ReservationContent{
 }
 
 class MemoryBufferContent{
-    constructor(ins, satisfy=false, busy=false, name="", A=""){
+    constructor(ins, satisfy=false, busy=false, name=""){
         this.name = name;
         this.satisfy = satisfy; //load或store的源可取
         this.busy = busy;
@@ -355,7 +353,7 @@ class MemoryBuffer {
 
 
         for(let i = 0; i < this.load_buffer_size; ++i)
-            if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].satisfy && this.load_buffer[i].ins.status_change_time["issue_time"] != current_cycle)
+            if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].satisfy && this.load_buffer[i].ins.status_change_time["issue_time"] !== current_cycle)
             {
                 if(current_cycle - this.load_buffer[i].begin_time === operations[this.load_buffer[i].op].exec_time - 1)
                 {
@@ -368,7 +366,7 @@ class MemoryBuffer {
             }
 
          for(let i = 0; i < this.store_buffer_size; ++i)
-            if(this.store_buffer[i] !== null && this.store_buffer[i].busy && this.store_buffer[i].satisfy && this.store_buffer[i].ins.status_change_time["issue_time"] != current_cycle)
+            if(this.store_buffer[i] !== null && this.store_buffer[i].busy && this.store_buffer[i].satisfy && this.store_buffer[i].ins.status_change_time["issue_time"] !== current_cycle)
             {
                 if(current_cycle - this.store_buffer[i].begin_time === operations[this.store_buffer[i].op].exec_time - 1)
                 {
@@ -476,7 +474,7 @@ class ReservationStation {
         }
     }
     //发射一条指令
-    issue (ins, current_cycle) {
+    issue (ins) {
         let type = 0; // 1为加减，2为乘除
         if(ins.op === "addd" || ins.op === "subd")
             type = 1;
@@ -587,7 +585,7 @@ class ReservationStation {
                 let find = false;
                 for(let j = 0; j < this.add_size; ++j){
                     if(this.add_reservation_stations[j] !== null && this.add_reservation_stations[j].satisfy && !this.add_reservation_stations[j].running 
-                        && this.add_reservation_stations[j].ins.status_change_time["issue_time"] < min_time && this.add_reservation_stations[j].ins.status_change_time["issue_time"] != current_cycle){
+                        && this.add_reservation_stations[j].ins.status_change_time["issue_time"] < min_time && this.add_reservation_stations[j].ins.status_change_time["issue_time"] !== current_cycle){
                         min_time = this.add_reservation_stations[j].ins.status_change_time["issue_time"];
                         min_rank = j;
                         find = true;
@@ -610,7 +608,7 @@ class ReservationStation {
                 let find = false;
                 for(let j = 0; j < this.multi_size; ++j){
                     if(this.multi_reservation_stations[j] !== null && this.multi_reservation_stations[j].satisfy && !this.multi_reservation_stations[j].running 
-                        && this.multi_reservation_stations[j].ins.status_change_time["issue_time"] < min_time && this.multi_reservation_stations[j].ins.status_change_time["issue_time"] != current_cycle){
+                        && this.multi_reservation_stations[j].ins.status_change_time["issue_time"] < min_time && this.multi_reservation_stations[j].ins.status_change_time["issue_time"] !== current_cycle){
                         min_time = this.multi_reservation_stations[j].ins.status_change_time["issue_time"];
                         min_rank = j;
                         find = true;
@@ -934,6 +932,7 @@ const test_instructions_list = [
         new Instruction("ld", "F1", "+12", ""),
         new Instruction("st", "F1", "+1", ""),
         new Instruction("ld", "F2", "+1", ""),
+        new Instruction("st", "F3", "+1", ""),
         new Instruction("multd", "F1", "F2", "F3"),
         new Instruction("multd", "F3", "F3", "F3"),
         new Instruction("st", "F3", "12", ""),

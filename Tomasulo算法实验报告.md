@@ -1,28 +1,56 @@
-## Tomasulo算法实验报告
+# Tomasulo算法实验报告
 
-##### 李则言 2014011292  吕鑫  2014011298  卫翔宇 2014011312
+李则言 2014011292  吕鑫  2014011298  卫翔宇 2014011312
 
 ---
 
-#### 一、环境配置
+## 一、环境配置
 
-##### 1.环境列表
+### 1.环境列表
 
-##### 2.运行方法
+任何一个浏览器（部分老旧的浏览器可能不支持），建议使用最新版的Chrome。
 
-使用浏览器打开`index.html`
+### 2.运行方法
 
-（这里可以讲前端的使用方法）
+1. 使用浏览器打开`index.html`。
 
-#### 二、代码结构
+2. 加载指令。点击右上角的`load example`可以加载预设的测试程序，点击左侧红圈中的`push`或者`pop`可以手动添加或者删除指令，然后编辑指令。
+
+   ![load_instruction](./report_source/load_instruction.png)
+
+3. 开始执行。
+
+   点击顶部操作栏中的`start`按钮进入执行状态，此时将不能再修改指令。
+
+   ![start](./report_source/start.png)
+
+   然后可以点击顶部操作栏中的`next cycle`和`previous cycle`单步调试FPU的执行。右侧`step`表示每次点击按钮移动的时钟数目。`current cycle`表示当前的时钟数。
+
+   ![step](./report_source/step.png)
+
+4. 重新初始化
+
+   点击顶部操作栏中的`initialize`将初始化程序，此时所有的状态和指令将被清除，可以重新编辑指令。
+
+### 3.单元测试
+
+打开`index.html`会自动执行单元测试，测试的内容是所有`load example`中出现的测试程序。
+
+单元测试函数在`tomasolu-core.js`文件结尾处，可以在此查看我们对测试程序的所有断言。
+
+单元测试失败将在控制台输出错误信息。
+
+## 二、代码结构
 
 `tomasolu-core.js`是Tomasulo算法的核心部分，按照要求实现了完整的算法流程。
 
-（这里可以将其他代码的用处）
+`tomasolu-view.js`主要实现了交互界面的逻辑。`index.html`和`index.css`实现了交互界面的样式。
 
-#### 三、核心算法实现介绍
+`./lib/`中是所有引用的第三方库。
 
-##### 1. Instruction类
+## 三、核心算法实现介绍
+
+### 1.Instruction类
 
 此类代表一条指令
 
@@ -30,7 +58,7 @@
 
 `status_change_time`是一个列表，存储指令各种事件的时间，分别是发射指令时间(键为issue_time)，开始执行时间(键为exec_time)，执行完毕时间(键为finish_time)，写回结果时间(键为write_time)。
 
-##### 2.ReservationContent类
+### 2.ReservationContent类
 
 此类代表一个加减或乘除保留站
 
@@ -46,7 +74,7 @@
 
 `ans`表示这个保留站对应的指令的运算结果
 
-##### 3.ReservationStation类
+### 3.ReservationStation类
 
 此类代表一个加减乘除保留站集合
 
@@ -76,9 +104,111 @@
 
 `write_back`函数，将计算结束的结果写回，并更新所有同名的需要更新qj,qk
 
-#### 四、前端实现介绍
+## 四、前端实现介绍
 
-#### 五、备注
+基于Vue.js实现。
+
+下面是页面的主体结构，其中`tomasolu-view`是通过Vue.js自定义的html标签。
+
+``` html
+<div id="te-view-div">
+    <tomasolu-view></tomasolu-view>
+</div>
+```
+
+Vue.js通过双向数据绑定，可以直接将`tomasolu-core.js`中实现的`FPU`数据显示出来，也可以很方便地直接在前段修改指令和内存的内容。
+
+向前执行一条指令直接调用`FPU`的`cycle_pass()`接口即可。向后的时钟移动将重新初始化`FPU`,然后从零时刻重新开始执行到目标时刻，因此向后的时钟移动是非常消耗资源的。
+
+## 五、测试与验证
+
+### TestCase1
+
+``` javascript
+Instruction("ld", "F6", "+34", ""),
+Instruction("ld", "F2", "+45", ""),
+Instruction("ld", "F10", "+5", ""),
+Instruction("addd", "F1", "F6", "F2"),
+Instruction("st", "F10", "+1", ""),
+Instruction("st", "F2", "+1", ""),
+```
+
+``` javascript
+assert_register_value(fpu, "F6", 34);
+assert_register_value(fpu, "F10", 5);
+assert_register_value(fpu, "F2", 34);
+assert_memory_value(fpu, 1, 34);
+assert_memory_value(fpu, 2, 2);
+assert_memory_value(fpu, 45, 45);
+assert_memory_value(fpu, 34, 34);
+```
+
+这个测例主要是验证`ld`和`st`指令功能实现的正确性，即能不能正确地进行内存读写。
+
+### TestCase2
+
+```JavaScript
+Instruction("ld", "F6", "+34", ""),
+Instruction("ld", "F2", "+45", ""),
+Instruction("ld", "F4", "+2", ""),
+Instruction("multd", "F2", "F4", "F1"),
+Instruction("subd", "F6", "F2", "F8"),
+Instruction("divd", "F1", "F6", "F10"),
+Instruction("addd", "F8", "F2", "F6"),
+Instruction("st", "F10", "19", "")
+```
+
+``` javascript
+assert_register_value(fpu, "F6", 34);
+assert_register_value(fpu, "F4", 2);
+assert_register_value(fpu, "F2", 45);
+assert_register_value(fpu, "F1", 90);
+assert_register_value(fpu, "F8", -11);
+assert_register_value(fpu, "F10", 90 / 34);
+assert_register_value(fpu, "F6", 34);
+assert_memory_value(fpu, 19, 90 / 34);
+```
+
+这个测例主要验证了四条算术指令实现的正确性，即能不能正确地进行浮点运算。
+
+### TestCase3
+
+``` javascript
+Instruction("ld", "F1", "+12", ""),
+Instruction("st", "F1", "+1", ""),
+Instruction("ld", "F2", "+1", ""),
+Instruction("multd", "F1", "F2", "F3"),
+Instruction("addd", "F3", "F3", "F3"),
+```
+
+``` javascript
+assert_memory_value(fpu, "1", 12);
+assert_register_value(fpu, "F3", 288);
+```
+
+这个验证了内存和寄存器的写后读冲突是否能够解决。
+
+### TestCase4
+
+```javascript
+Instruction("ld", "F1", "+12", ""),
+Instruction("st", "F1", "+1", ""),
+Instruction("ld", "F2", "+1", ""),
+Instruction("st", "F3", "+1", ""),
+Instruction("multd", "F1", "F2", "F3"),
+Instruction("multd", "F3", "F3", "F3"),
+Instruction("st", "F3", "12", ""),
+Instruction("addd", "F3", "F3", "F3"),
+```
+
+``` javascript
+assert_memory_value(fpu, 12, 144 * 144);
+assert_register_value(fpu, "F3", 144 * 144 * 2);
+```
+
+这个验证了内存和寄存器的读后写冲突能不能解决。
+
+## 六、备注
 
 1.按照助教邮件的回复，因为已经实现了，就没有使用流水线，而是前一条指令执行完了，后一条指令才可以继续使用计算资源，并不能同时使用。（但是实现了扩展，支持多加减或乘除器，这样可以同时在不同的运算器中计算，只是默认设置没有打开这样功能）。
 

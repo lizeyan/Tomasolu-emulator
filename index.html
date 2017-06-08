@@ -235,10 +235,10 @@
                                     fpu.memory_buffer.store_buffer[idx].busy }}
                                 </td>
                                 <td>{{ fpu.memory_buffer.store_buffer[idx] === null ? '':
-                                    fpu.memory_buffer.store_buffer[idx].rs }}
+                                    fpu.memory_buffer.store_buffer[idx].A }}
                                 </td>
                                 <td>{{ fpu.memory_buffer.store_buffer[idx] === null ? '':
-                                    fpu.memory_buffer.store_buffer[idx].A }}
+                                    fpu.memory_buffer.store_buffer[idx].exp }}
                                 </td>
                             </tr>
                             </tbody>
@@ -332,8 +332,8 @@
                         </tr>
                         <tr>
                             <th>内容</th>
-                            <td class="text-center" v-for="idx in range(0, memory_query_addresses.length)">{{
-                                fpu.memory.read(memory_query_addresses[idx]) }}
+                            <td class="text-center" v-for="idx in range(0, memory_query_addresses.length)" v-if="fpu.memory.read(memory_query_addresses[idx]) !== null">
+                                <input type="number" v-model="fpu.memory.data[memory_query_addresses[idx]]" :title="'value of ' + memory_query_addresses[idx]" max="1000000" min="-1000000">
                             </td>
                         </tr>
                         </tbody>
