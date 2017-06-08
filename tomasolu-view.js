@@ -10,17 +10,17 @@ Vue.component("tomasolu-view", {
             memory_query_addresses: addresses,
             loading: true,
             example_instructions_list: test_instructions_list,
-            forward_step: 1,
+            step: 1,
             alert_list: [],
         };
     },
     methods: {
         next_cycle: function () {
-            this.fpu.cycle_pass(this.forward_step);
+            this.fpu.cycle_pass(this.step);
             this.$forceUpdate();
         },
         last_cycle: function () {
-            let togo = this.fpu.cycle_passed - this.forward_step;
+            let togo = this.fpu.cycle_passed - this.step;
             if (togo < 0) {
                 this.popup_alert("can't go back to the time before FPU created", "danger");
                 return;
@@ -67,6 +67,12 @@ Vue.component("tomasolu-view", {
                 return _default;
             else
                 return val;
+        },
+        register_status: function (name) {
+            if (name in this.fpu.register_file.data)
+                return JSON.stringify(this.fpu.register_file.data[name]);
+            else
+                return name;
         }
     }
     ,
