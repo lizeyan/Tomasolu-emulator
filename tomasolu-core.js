@@ -69,7 +69,7 @@ class Instruction {
         this.rt = rt;
         this.rd = rd;
         this.status = ""; //指令状态: queue, issue, exec, exec_finish, finish
-        this.status_change_time = {}; // 指令的运行状态的三个时间，发射指令时间(issue_time)，执行完毕时间(finish_time)，写回结果时间(write_time)
+        this.status_change_time = {}; // 指令的运行状态的四个时间，发射指令时间(issue_time)，开始执行时间(exec_time)，执行完毕时间(finish_time)，写回结果时间(write_time)
         this.operation = operations[op];
     }
 
@@ -79,10 +79,11 @@ class Instruction {
 }
 
 class ReservationContent{
-    constructor(op, rs, ins, running=false, busy=false, time=0, name="", vj="", vk="", qj="", qk=""){
+    constructor(op, rs, ins, running=false, busy=false, satisfy=false, time=0, name="", vj="", vk="", qj="", qk=""){
         this.name = name;
-        this.busy = busy; //是否满足两个寄存器都可取
+        this.busy = busy; 
         this.running = running;
+        this.satisfy = satisfy; //是否满足两个寄存器都可取
         this.time = time;
         this.ins = ins;
         this.op = op;
@@ -255,7 +256,7 @@ class MemoryBuffer {
 // 判断是否开始执行，设置开始执行时间
         for(let i = 0; i < this.load_buffer_size; ++i)
         {             
-            if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].satisfy && !this.load_buffer[i].running)
+            if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].satisfy && !this.load_buffer[i].running && this.load_buffer[i].ins.status_change_time["issue_time"] !== current_cycle)
             {
                 formerInsAllRunning = true;
 
@@ -291,12 +292,13 @@ class MemoryBuffer {
                     this.load_buffer[i].begin_time = current_cycle;
                     this.load_buffer[i].running = true;
                     this.load_buffer[i].ins.status = "load";
+                    this.load_buffer[i].ins.status_change_time["exec_time"] = current_cycle;
                 }
             }
         }
         for(let i = 0; i < this.store_buffer_size; ++i)
         {
-            if(this.store_buffer[i] !== null && this.store_buffer[i].busy && !this.store_buffer[i].running)
+            if(this.store_buffer[i] !== null && this.store_buffer[i].busy && !this.store_buffer[i].running && this.store_buffer[i].ins.status_change_time["issue_time"] !== current_cycle)
             {
                 formerInsAllRunning = true;
               
@@ -332,6 +334,7 @@ class MemoryBuffer {
                         this.store_buffer[i].begin_time = current_cycle;
                         this.store_buffer[i].running = true;
                         this.store_buffer[i].ins.status = "store";
+                        this.store_buffer[i].ins.status_change_time["exec_time"] = current_cycle;
                     }
                     else  //如果运行条件（之前）尚未满足，检查一下现在是否满足
                     {
@@ -341,6 +344,7 @@ class MemoryBuffer {
                             this.store_buffer[i].begin_time = current_cycle;
                             this.store_buffer[i].running = true;
                             this.store_buffer[i].ins.status = "store";
+                            this.store_buffer[i].ins.status_change_time["exec_time"] = current_cycle;
                         }
                     }
                 }
@@ -349,7 +353,7 @@ class MemoryBuffer {
 
 
         for(let i = 0; i < this.load_buffer_size; ++i)
-            if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].satisfy)
+            if(this.load_buffer[i] !== null && this.load_buffer[i].busy && this.load_buffer[i].satisfy && this.load_buffer[i].ins.status_change_time["issue_time"] != current_cycle)
             {
                 if(current_cycle - this.load_buffer[i].begin_time === operations[this.load_buffer[i].op].exec_time)
                 {
@@ -362,7 +366,7 @@ class MemoryBuffer {
             }
 
          for(let i = 0; i < this.store_buffer_size; ++i)
-            if(this.store_buffer[i] !== null && this.store_buffer[i].busy && this.store_buffer[i].satisfy)
+            if(this.store_buffer[i] !== null && this.store_buffer[i].busy && this.store_buffer[i].satisfy && this.store_buffer[i].ins.status_change_time["issue_time"] != current_cycle)
             {
                 if(current_cycle - this.store_buffer[i].begin_time === operations[this.store_buffer[i].op].exec_time)
                 {
@@ -493,6 +497,7 @@ class ReservationStation {
             this.multi_used += 1;
         // 为这个待issue的类构建一个新的保留站项目
         let this_content = new ReservationContent(ins.op, ins.rs, ins);
+        this_content.busy = true;
         // 检测rs寄存器是否可用
         if(this.fpu.register_file.get_expression(ins.rs) === ""){
             this_content.vj = this.fpu.register_file.read(ins.rs);
@@ -505,8 +510,8 @@ class ReservationStation {
         }else{
             this_content.qk = this.fpu.register_file.get_expression(ins.rt);
         }
-        // 判断是否两个寄存器都可用，设置busy
-        this_content.busy = this_content.qj === "" && this_content.qk === "";
+        // 判断是否两个寄存器都可用，设置satisfy
+        this_content.satisfy = this_content.qj === "" && this_content.qk === "";
         // 将这个保留站项目加入列表中
         let rank = 0;
         if (type === 1)
@@ -531,28 +536,6 @@ class ReservationStation {
         // 设置写入寄存器的表达式
         this_content.name = ins.op + this_content.rank.toString();
         this.fpu.register_file.set_expression(ins.rd, this_content.name);
-        // 如果条件满足，那么让其开始运行
-        // if(this_content.busy){
-        //     if(type === 1){
-        //         for(let i = 0; i < add_compute_num; ++i)
-        //             if(this.add_compute_work[i] === -1){
-        //                 this.add_compute_work[i] = this_content.rank;
-        //                 this_content.running = true;
-        //                 ins.status = "exec";
-        //                 this_content.ans = operations[this_content.op].exec_result(this_content.vj, this_content.vk);
-        //                 break;
-        //             }
-        //     }else{
-        //         for(let i = 0; i < multi_compute_num; ++i)
-        //             if(this.multi_compute_work[i] === -1){
-        //                 this.multi_compute_work[i] = this_content.rank;
-        //                 this_content.running = true;
-        //                 ins.status = "exec";
-        //                 this_content.ans = operations[this_content.op].exec_result(this_content.vj, this_content.vk);
-        //                 break;
-        //             }
-        //     }
-        // }
     }
     /*
      * 保留站执行操作:检查寄存器状态,开始执行指令,若干周期之后指令完成的时候负责写回寄存器并修改寄存器表达式.
@@ -563,7 +546,7 @@ class ReservationStation {
         //更新所有保留站的寄存器，将q转成v
         for(let i = 0; i < this.add_size; ++i){
             //如果不存在或已经满足条件直接跳过
-            if(this.add_reservation_stations[i] === null || this.add_reservation_stations[i].busy) continue;
+            if(this.add_reservation_stations[i] === null || this.add_reservation_stations[i].satisfy) continue;
             //更新vj和vk
             if(this.add_reservation_stations[i].vj === "")
                 if(this.fpu.register_file.get_expression(this.add_reservation_stations[i].ins.rs) === "")
@@ -573,11 +556,11 @@ class ReservationStation {
                     this.add_reservation_stations[i].vk = this.fpu.register_file.read(this.add_reservation_stations[i].ins.rt);
             //更新所有满足条件的保留站项目
             if(this.add_reservation_stations[i].vj !== "" && this.add_reservation_stations[i].vk !== "")
-                this.add_reservation_stations[i].busy = true;
+                this.add_reservation_stations[i].satisfy = true;
         }
         for(let i = 0; i < this.multi_size; ++i){
             //如果不存在或已经满足条件直接跳过
-            if(this.multi_reservation_stations[i] === null || this.multi_reservation_stations[i].busy) continue;
+            if(this.multi_reservation_stations[i] === null || this.multi_reservation_stations[i].satisfy) continue;
             //更新vj和vk
             if(this.multi_reservation_stations[i].vj === "")
                 if(this.fpu.register_file.get_expression(this.multi_reservation_stations[i].ins.rs) === "")
@@ -587,7 +570,7 @@ class ReservationStation {
                     this.multi_reservation_stations[i].vk = this.fpu.register_file.read(this.multi_reservation_stations[i].ins.rt);
             //更新所有满足条件的保留站项目
             if(this.multi_reservation_stations[i].vj !== "" && this.multi_reservation_stations[i].vk !== "")
-                this.multi_reservation_stations[i].busy = true;
+                this.multi_reservation_stations[i].satisfy = true;
         }
 
         //对仍存在的计算资源，分配给已经满足的保留站项目
@@ -598,7 +581,7 @@ class ReservationStation {
                 let min_rank = 1;
                 let find = false;
                 for(let j = 0; j < this.add_size; ++j){
-                    if(this.add_reservation_stations[j] !== null && this.add_reservation_stations[j].busy && !this.add_reservation_stations[j].running 
+                    if(this.add_reservation_stations[j] !== null && this.add_reservation_stations[j].satisfy && !this.add_reservation_stations[j].running 
                         && this.add_reservation_stations[j].ins.status_change_time["issue_time"] < min_time && this.add_reservation_stations[j].ins.status_change_time["issue_time"] != current_cycle){
                         min_time = this.add_reservation_stations[j].ins.status_change_time["issue_time"];
                         min_rank = j;
@@ -610,6 +593,7 @@ class ReservationStation {
                 this.add_compute_work[i] = this.add_reservation_stations[min_rank].rank;
                 this.add_reservation_stations[min_rank].running = true;
                 this.add_reservation_stations[min_rank].ins.status = "exec";
+                this.add_reservation_stations[min_rank].ins.status_change_time["exec_time"] = current_cycle;
                 this.add_reservation_stations[min_rank].ans = operations[this.add_reservation_stations[min_rank].op].exec_result(this.add_reservation_stations[min_rank].vj, this.add_reservation_stations[min_rank].vk);
             }
         }
@@ -620,7 +604,7 @@ class ReservationStation {
                 let min_rank = 1;
                 let find = false;
                 for(let j = 0; j < this.multi_size; ++j){
-                    if(this.multi_reservation_stations[j] !== null && this.multi_reservation_stations[j].busy && !this.multi_reservation_stations[j].running 
+                    if(this.multi_reservation_stations[j] !== null && this.multi_reservation_stations[j].satisfy && !this.multi_reservation_stations[j].running 
                         && this.multi_reservation_stations[j].ins.status_change_time["issue_time"] < min_time && this.multi_reservation_stations[j].ins.status_change_time["issue_time"] != current_cycle){
                         min_time = this.multi_reservation_stations[j].ins.status_change_time["issue_time"];
                         min_rank = j;
@@ -632,6 +616,7 @@ class ReservationStation {
                 this.multi_compute_work[i] = this.multi_reservation_stations[min_rank].rank;
                 this.multi_reservation_stations[min_rank].running = true;
                 this.multi_reservation_stations[min_rank].ins.status = "exec";
+                this.multi_reservation_stations[min_rank].ins.status_change_time["exec_time"] = current_cycle;
                 this.multi_reservation_stations[min_rank].ans = operations[this.multi_reservation_stations[min_rank].op].exec_result(this.multi_reservation_stations[min_rank].vj, this.multi_reservation_stations[min_rank].vk);
             }
         }
@@ -729,6 +714,7 @@ class ReservationStation {
                 //写入这条指令的写回时间
                 this.add_reservation_stations[i].ins.status_change_time["write_time"] = current_cycle;
                 this.add_reservation_stations[i].ins.status = "finish";
+                this.add_reservation_stations[i].busy = false;
                 this.add_reservation_stations[i] = null;
             }
         }
@@ -921,6 +907,12 @@ const test_instructions_list = [
         new Instruction("ld", "F2", "+1", ""),
         new Instruction("multd", "F1", "F2", "F3"),
         new Instruction("addd", "F3", "F3", "F3"),
+    ],
+    [
+        //写后读2
+        new Instruction("multd", "F1", "F2", "F3"),
+        new Instruction("st", "F3", "+13", ""),
+        new Instruction("ld", "F5", "+13", ""),
     ],
 ];
 
